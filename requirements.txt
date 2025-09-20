@@ -16,5 +16,6 @@ pycodestyle==2.14.0
 pyflakes==3.4.0
 python-dotenv==1.1.1
 pytokens==0.1.10
+ruff==0.13.1
 sqlparse==0.5.3
 tzdata==2025.2
