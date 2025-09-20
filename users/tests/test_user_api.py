@@ -73,3 +73,9 @@ class TestUserRegistrationViewSet(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("non_field_errors", response.data)
         self.assertTrue(any("passwords" in error.lower() for error in response.data["non_field_errors"]))
+
+    def test_create_user_with_no_password(self):
+        del self.user_data["password1"]
+        response = self.client.post(self.url, self.user_data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("password1", response.data)
