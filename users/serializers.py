@@ -24,7 +24,6 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         write_only=True,
         required=True,
     )
-    
 
     class Meta:
         model = User
@@ -42,7 +41,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         if password1 != password2:
             raise serializers.ValidationError("Passwords do not match.")
 
-        validate_password(attrs.get("password2", ""))
+        validate_password(password1)
         return super().validate(attrs)
 
     def create(self, validated_data):
