@@ -1,13 +1,7 @@
-from django.contrib.auth import get_user_model
-from rest_framework import mixins, viewsets
+from rest_framework.generics import CreateAPIView
 
 from users.serializers import UserRegistrationSerializer
 
-User = get_user_model()
 
-
-class UserRegistrationViewSet(
-    mixins.CreateModelMixin,
-    viewsets.GenericViewSet,
-):
+class UserRegistrationView(CreateAPIView):
     serializer_class = UserRegistrationSerializer
