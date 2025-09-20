@@ -8,7 +8,6 @@ User = get_user_model()
 class UserRegistrationSerializer(serializers.ModelSerializer):
     email = serializers.EmailField(
         label="Email",
-        write_only=True,
         required=True,
     )
     password1 = serializers.CharField(
@@ -29,7 +28,12 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = User
-        fields = ["email", "password1", "password2"]
+        fields = ["id", "email", "password1", "password2"]
+
+    def validate_email(self, value):
+        if User.objects.filter(email=value).exists():
+            raise serializers.ValidationError("This email is already being used by someone.")
+        return value
 
     def validate(self, attrs):
         password1 = attrs.get("password1")
