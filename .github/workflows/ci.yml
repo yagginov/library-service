@@ -14,7 +14,7 @@ jobs:
     environment: dev
 
     env:
-      DJANGO_SECRET_KEY: ${{ secrets.SECRET_KEY }}
+      DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
       DEBUG: ${{ vars.DEBUG }}
 
     steps:
