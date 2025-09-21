@@ -3,8 +3,9 @@ from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from .models import Borrowing
-from .serializers import BorrowingCreateSerializer
+from borrowings.filters import BorrowingFilter
+from borrowings.models import Borrowing
+from borrowings.serializers import BorrowingCreateSerializer
 
 
 class BorrowingViewSet(
@@ -17,7 +18,7 @@ class BorrowingViewSet(
     serializer_class = BorrowingCreateSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ["user_id", "actual_return_date"]
+    filterset_class = BorrowingFilter
 
     @action(detail=True, methods=["post"])
     def return_book(self, request, pk=None):
