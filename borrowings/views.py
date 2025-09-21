@@ -1,61 +1,34 @@
-from rest_framework import generics, permissions, status
+from django_filters.rest_framework import DjangoFilterBackend
+from rest_framework import mixins, permissions, status, viewsets
+from rest_framework.decorators import action
 from rest_framework.response import Response
-from rest_framework.views import APIView
 
 from .models import Borrowing
 from .serializers import BorrowingCreateSerializer
 
 
-class BorrowingCreateView(generics.CreateAPIView):
+class BorrowingViewSet(
+    mixins.CreateModelMixin,
+    mixins.ListModelMixin,
+    mixins.RetrieveModelMixin,
+    viewsets.GenericViewSet,
+):
     queryset = Borrowing.objects.all()
     serializer_class = BorrowingCreateSerializer
     permission_classes = [permissions.IsAuthenticated]
+    filter_backends = [DjangoFilterBackend]
+    filterset_fields = ['user_id', 'actual_return_date']
 
-
-class BorrowingListView(generics.ListAPIView):
-    queryset = Borrowing.objects.all()
-    serializer_class = BorrowingCreateSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        qs = super().get_queryset()
-        user_id = self.request.query_params.get("user_id")
-        is_active = self.request.query_params.get("is_active")
-
-        if user_id:
-            qs = qs.filter(user_id=user_id)
-        if is_active is not None:
-            is_active = is_active.lower() == "true"
-            if is_active:
-                qs = qs.filter(actual_return_date__isnull=True)
-            else:
-                qs = qs.filter(actual_return_date__isnull=False)
-        return qs
-
-
-class BorrowingDetailView(generics.RetrieveAPIView):
-    queryset = Borrowing.objects.all()
-    serializer_class = BorrowingCreateSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-
-class BorrowingReturnView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
-    def post(self, request, pk):
+    @action(detail=True, methods=['post'])
+    def return_book(self, request, pk=None):
+        borrowing = self.get_object()
         try:
-            borrowing = Borrowing.objects.get(pk=pk)
             borrowing.mark_returned()
-        except Borrowing.DoesNotExist:
-            return Response(
-                {"detail": "Borrowing not found."},
-                status=status.HTTP_404_NOT_FOUND,
-            )
         except ValueError as e:
             return Response(
-                {"detail": str(e)},
-                status=status.HTTP_400_BAD_REQUEST,
+                {'detail': str(e)},
+                status=status.HTTP_400_BAD_REQUEST
             )
 
-        serializer = BorrowingCreateSerializer(borrowing)
+        serializer = self.get_serializer(borrowing)
         return Response(serializer.data, status=status.HTTP_200_OK)
