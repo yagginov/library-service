@@ -22,20 +22,19 @@ class BorrowingCreateSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "borrow_date", "actual_return_date"]
 
-    def create(self, validated_data):
-        request = self.context.get("request")
-        user = getattr(request, "user", None)
-        if not user or user.is_anonymous:
-            raise serializers.ValidationError("Authentication required.")
+    def validate_book(self, value):
+        if value.inventory <= 0:
+            raise serializers.ValidationError("Book is not available.")
+        return value
 
+    def create(self, validated_data):
+        user = self.context["request"].user
         book = validated_data["book"]
 
         with transaction.atomic():
             updated = Book.objects.filter(
-                pk=book.pk,
-                inventory__gte=1
+                pk=book.pk, inventory__gte=1
             ).update(inventory=F("inventory") - 1)
-
             if updated == 0:
                 raise serializers.ValidationError("Book is not available.")
 
