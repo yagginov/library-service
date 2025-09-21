@@ -49,3 +49,9 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
         email = validated_data.get("email")
         password = validated_data.get("password1")
         return User.objects.create_user(email=email, password=password)
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ["id", "email", "first_name", "last_name"]
