@@ -16,6 +16,8 @@ jobs:
     env:
       DJANGO_SECRET_KEY: ${{ secrets.DJANGO_SECRET_KEY }}
       DEBUG: ${{ vars.DEBUG }}
+      TG_API_TOKEN: ${{ secrets.TG_API_TOKEN }}
+      CHAT_ID: ${{ secrets.CHAT_ID }}
 
     steps:
       - name: Checkout repo
