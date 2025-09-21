@@ -3,8 +3,7 @@ from django.db.models import F
 from rest_framework import serializers
 
 from books.models import Book
-
-from .models import Borrowing
+from borrowings.models import Borrowing
 
 
 class BorrowingCreateSerializer(serializers.ModelSerializer):
