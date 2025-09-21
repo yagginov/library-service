@@ -1,6 +1,6 @@
+from django.conf import settings
 from telegram import Bot
 
-from django.conf import settings
 from notifications.interfaces import NotificationInterface
 
 
