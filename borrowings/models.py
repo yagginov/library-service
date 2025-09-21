@@ -38,5 +38,5 @@ class Borrowing(models.Model):
             self.save()
 
             Book.objects.filter(
-                pk=self.book_id).update(inventory=F("inventory") + 1
-            )
+                pk=self.book_id
+            ).update(inventory=F("inventory") + 1)
