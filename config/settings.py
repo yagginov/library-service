@@ -13,6 +13,10 @@ import os
 from datetime import timedelta
 from pathlib import Path
 
+from dotenv import load_dotenv
+
+load_dotenv()
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -141,3 +145,7 @@ SIMPLE_JWT = {
     "REFRESH_TOKEN_LIFETIME": timedelta(days=1),
     "ROTATE_REFRESH_TOKENS": True,
 }
+
+TG_API_TOKEN = os.environ["TG_API_TOKEN"]
+
+CHAT_ID = os.environ["CHAT_ID"]
