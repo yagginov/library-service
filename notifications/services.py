@@ -1,10 +1,7 @@
-from dotenv import load_dotenv
 from telegram import Bot
 
-from config import settings
+from django.conf import settings
 from notifications.interfaces import NotificationInterface
-
-load_dotenv()
 
 
 class NotificationTelegramService(NotificationInterface):
