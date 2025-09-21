@@ -39,4 +39,6 @@ class Borrowing(models.Model):
 
             Book.objects.filter(
                 pk=self.book_id
-            ).update(inventory=F("inventory") + 1)
+            ).update(
+                inventory=F("inventory") + 1
+            )
