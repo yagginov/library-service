@@ -3,17 +3,8 @@ from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
-from users.models import User
-from users.serializers import UserSerializer
-
 from .models import Borrowing
 from .serializers import BorrowingCreateSerializer
-
-
-class UserRegistrationViewSet(viewsets.ModelViewSet):
-    queryset = User.objects.all()
-    serializer_class = UserSerializer
-    permission_classes = [permissions.AllowAny]
 
 
 class BorrowingViewSet(
