@@ -32,9 +32,9 @@ class BorrowingCreateSerializer(serializers.ModelSerializer):
         book = validated_data["book"]
 
         with transaction.atomic():
-            updated = Book.objects.filter(
-                pk=book.pk, inventory__gte=1
-            ).update(inventory=F("inventory") - 1)
+            updated = Book.objects.filter(pk=book.pk, inventory__gte=1).update(
+                inventory=F("inventory") - 1
+            )
             if updated == 0:
                 raise serializers.ValidationError("Book is not available.")
 

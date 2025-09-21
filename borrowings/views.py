@@ -3,8 +3,17 @@ from rest_framework import mixins, permissions, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from users.models import User
+from users.serializers import UserSerializer
+
 from .models import Borrowing
 from .serializers import BorrowingCreateSerializer
+
+
+class UserRegistrationViewSet(viewsets.ModelViewSet):
+    queryset = User.objects.all()
+    serializer_class = UserSerializer
+    permission_classes = [permissions.AllowAny]
 
 
 class BorrowingViewSet(
@@ -17,17 +26,17 @@ class BorrowingViewSet(
     serializer_class = BorrowingCreateSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
-    filterset_fields = ['user_id', 'actual_return_date']
+    filterset_fields = ["user_id", "actual_return_date"]
 
-    @action(detail=True, methods=['post'])
+    @action(detail=True, methods=["post"])
     def return_book(self, request, pk=None):
         borrowing = self.get_object()
         try:
             borrowing.mark_returned()
         except ValueError as e:
             return Response(
-                {'detail': str(e)},
-                status=status.HTTP_400_BAD_REQUEST
+                {"detail": str(e)},
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         serializer = self.get_serializer(borrowing)
