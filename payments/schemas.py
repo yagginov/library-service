@@ -10,5 +10,5 @@ payment_viewset_schema = extend_schema_view(
         description="Retrieve detailed information about a specific payment. "
                    "Regular users can only access payments for their own borrowings, "
                    "while admin users can access any payment in the system.",
-    )
+    ),
 )

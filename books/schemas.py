@@ -56,5 +56,5 @@ book_viewset_schema = extend_schema_view(
     destroy=extend_schema(
         description="Remove a book from the library catalog. "
                     "Only admin users can delete books.",
-    )
+    ),
 )
