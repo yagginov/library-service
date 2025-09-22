@@ -158,6 +158,17 @@ class BorrowingAPITest(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertGreaterEqual(len(response.data), 1)
 
+    def test_admin_can_see_every_borrowing(self):
+        self.client.force_authenticate(user=self.admin)
+        Borrowing.objects.create(
+            user=self.admin,
+            book=self.book,
+            expected_return_date=date.today() + timedelta(days=5),
+        )
+        response = self.client.get("/api/borrowings/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(response.data), 2)
+
     def test_create_borrowing_with_past_expected_return_date(self):
         past_date = date.today() - timedelta(days=1)
         data = {
