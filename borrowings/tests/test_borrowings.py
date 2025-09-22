@@ -15,7 +15,7 @@ class BorrowingModelTest(APITestCase):
 
     def setUp(self):
         self.user = User.objects.create_user(
-            email="apiuser@example.com",  # <- email added
+            email="apiuser@example.com",
             password="pass123"
         )
         self.client.force_authenticate(user=self.user)
@@ -42,7 +42,7 @@ class BorrowingModelTest(APITestCase):
         with self.assertRaises(ValueError):
             self.borrowing.mark_returned()
 
-#
+
 class BorrowingSerializerTest(APITestCase):
 
     def setUp(self):
@@ -84,6 +84,10 @@ class BorrowingAPITest(APITestCase):
         self.user = User.objects.create_user(
             email="apiuser@example.com",
             password="pass123"
+        )
+        self.admin = User.objects.create_superuser(
+            email="admin@example.com",
+            password="adminpass"
         )
         self.client.force_authenticate(user=self.user)
         self.book = Book.objects.create(
@@ -132,3 +136,34 @@ class BorrowingAPITest(APITestCase):
         response = self.client.post(f"/api/borrowings/{self.borrowing.id}/return_book/")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("already returned", response.data["detail"])
+
+    def test_user_can_only_see_own_borrowings(self):
+        other_user = User.objects.create_user(
+            email="other@example.com",
+            password="pass123"
+        )
+        Borrowing.objects.create(
+            user=other_user,
+            book=self.book,
+            expected_return_date=date.today() + timedelta(days=5),
+        )
+        response = self.client.get("/api/borrowings/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        self.assertEqual(len(response.data), 2)
+
+    def test_admin_can_see_all_borrowings(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get("/api/borrowings/")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertGreaterEqual(len(response.data), 1)
+
+    def test_create_borrowing_with_past_expected_return_date(self):
+        past_date = date.today() - timedelta(days=1)
+        data = {
+            "book": self.book.id,
+            "expected_return_date": str(past_date),
+        }
+        response = self.client.post("/api/borrowings/", data)
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("expected_return_date", str(response.data))
