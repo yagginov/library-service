@@ -34,9 +34,9 @@ book_viewset_schema = extend_schema_view(
                     "-daily_fee",
                     "inventory",
                     "-inventory"
-                ]
-            )
-        ]
+                ],
+            ),
+        ],
     ),
     create=extend_schema(
         description="Add a new book to the library catalog. "

@@ -9,13 +9,13 @@ borrowings_viewset_schema = extend_schema_view(
             OpenApiParameter(
                 name="is_active",
                 type=OpenApiTypes.BOOL,
-                description="Filter by active status."
-            )
-        ]
+                description="Filter by active status.",
+            ),
+        ],
     ),
     create=extend_schema(
         description="Borrow a book from the library. "
-                    "The book inventory will be automatically decreased by 1."
+                    "The book inventory will be automatically decreased by 1.",
     ),
     retrieve=extend_schema(
         description="Retrieve detailed information about a specific borrowing. "
