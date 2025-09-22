@@ -38,6 +38,7 @@ INSTALLED_APPS = [
     "rest_framework",
     "django_filters",
     "django_celery_beat",
+    "drf_spectacular",
 
     # Local apps
     "users",
@@ -146,7 +147,51 @@ AUTH_USER_MODEL = "users.User"
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-    )
+    ),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/day",
+        "user": "1000/day",
+    },
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Library API",
+    "DESCRIPTION": "A library management system that enables "
+                   "users to browse and borrow books online.",
+    "COMPONENTS": {
+        "securitySchemes": {
+            "CustomAuth": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "HTTP_AUTHORIZE",
+                "description": "JWT token with Bearer prefix in HTTP_AUTHORIZE header"
+            }
+        }
+    },
+    "SECURITY": [{"CustomAuth": []}],
+    "TAGS": [
+        {
+            "name": "library",
+            "description": "Book catalog and inventory management"
+        },
+        {
+            "name": "borrowings",
+            "description": "Borrowing and return operations"
+        },
+        {
+            "name": "payments",
+            "description": "Payment processing and billing"
+        },
+        {
+            "name": "users",
+            "description": "User management and profiles"
+        }
+    ]
 }
 
 SIMPLE_JWT = {

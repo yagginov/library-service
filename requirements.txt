@@ -43,3 +43,4 @@ vine==5.1.0
 wcwidth==0.2.13
 python-telegram-bot==22.4
 django-celery-beat==2.8.1
+drf-spectacular==0.28.0
