@@ -3,6 +3,7 @@ from django.db.models import F
 from rest_framework import serializers
 
 from books.models import Book
+from books.serializers import BookSerializer
 from borrowings.models import Borrowing
 
 
@@ -42,14 +43,8 @@ class BorrowingCreateSerializer(serializers.ModelSerializer):
         return borrowing
 
 
-class BookDetailSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Book
-        fields = ["id", "title", "author", "cover", "inventory", "daily_fee"]
-
-
 class BorrowingDetailSerializer(serializers.ModelSerializer):
-    book = BookDetailSerializer(read_only=True)
+    book = BookSerializer(read_only=True)
     user = serializers.StringRelatedField(read_only=True)
 
     class Meta:
