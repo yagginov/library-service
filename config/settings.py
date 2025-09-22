@@ -24,6 +24,9 @@ DEBUG = os.getenv("DEBUG", False) in ("True", "true", "1")
 ALLOWED_HOSTS = []
 
 
+SITE_URL = os.getenv("SITE_URL", "http://127.0.0.1:8000")
+
+
 # Application definition
 
 INSTALLED_APPS = [
@@ -211,3 +214,6 @@ CELERY_TIMEZONE = "Europe/Kyiv"
 CELERY_TASK_TRACK_STARTED = True
 CELERY_TASK_TIME_LIMIT = 30 * 60
 CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+STRIPE_PUBLISHABLE_KEY = os.environ["STRIPE_PUBLISHABLE_KEY"]
+STRIPE_SECRET_KEY = os.environ["STRIPE_SECRET_KEY"]
