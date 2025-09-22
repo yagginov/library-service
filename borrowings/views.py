@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from base.permissions import IsAdminOrOwnerWithCreatePermission
 from borrowings.filters import BorrowingFilter
 from borrowings.models import Borrowing
-from borrowings.serializers import BorrowingCreateSerializer
+from borrowings.serializers import BorrowingCreateSerializer, BorrowingDetailSerializer
 
 
 class BorrowingViewSet(
@@ -36,5 +36,11 @@ class BorrowingViewSet(
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        borrowing.refresh_from_db()
         serializer = self.get_serializer(borrowing)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def get_serializer_class(self):
+        if self.action == "retrieve":
+            return BorrowingDetailSerializer
+        return super().get_serializer_class()
