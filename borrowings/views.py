@@ -15,7 +15,6 @@ class BorrowingViewSet(
     viewsets.GenericViewSet,
 ):
     queryset = Borrowing.objects.select_related("book", "user")
-    serializer_class = BorrowingCreateSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
     filterset_class = BorrowingFilter
@@ -38,4 +37,4 @@ class BorrowingViewSet(
     def get_serializer_class(self):
         if self.action == "retrieve":
             return BorrowingDetailSerializer
-        return super().get_serializer_class()
+        return BorrowingCreateSerializer
