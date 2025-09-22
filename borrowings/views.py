@@ -1,8 +1,9 @@
 from django_filters.rest_framework import DjangoFilterBackend
-from rest_framework import mixins, permissions, status, viewsets
+from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from base.permissions import IsAdminOrOwnerWithCreatePermission
 from borrowings.filters import BorrowingFilter
 from borrowings.models import Borrowing
 from borrowings.serializers import BorrowingCreateSerializer, BorrowingDetailSerializer
@@ -14,8 +15,7 @@ class BorrowingViewSet(
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
-    queryset = Borrowing.objects.select_related("book", "user")
-    permission_classes = [permissions.IsAuthenticated]
+    permission_classes = [IsAdminOrOwnerWithCreatePermission, ]
     filter_backends = [DjangoFilterBackend]
     filterset_class = BorrowingFilter
 
@@ -33,6 +33,12 @@ class BorrowingViewSet(
         borrowing.refresh_from_db()
         serializer = self.get_serializer(borrowing)
         return Response(serializer.data, status=status.HTTP_200_OK)
+
+    def get_queryset(self):
+        queryset = Borrowing.objects.select_related("book", "user")
+        if not self.request.user.is_staff:
+            queryset = queryset.filter(user=self.request.user)
+        return queryset
 
     def get_serializer_class(self):
         if self.action == "retrieve":
