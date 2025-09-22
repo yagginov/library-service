@@ -1,7 +1,8 @@
+from datetime import date
+
 from django.db import transaction
 from django.db.models import F
 from rest_framework import serializers
-from datetime import date
 
 from books.models import Book
 from books.serializers import BookSerializer
