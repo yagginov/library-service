@@ -14,7 +14,7 @@ class BorrowingViewSet(
     mixins.RetrieveModelMixin,
     viewsets.GenericViewSet,
 ):
-    queryset = Borrowing.objects.select_related("book", "user").all()
+    queryset = Borrowing.objects.select_related("book", "user")
     serializer_class = BorrowingCreateSerializer
     permission_classes = [permissions.IsAuthenticated]
     filter_backends = [DjangoFilterBackend]
