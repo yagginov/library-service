@@ -1,13 +1,12 @@
 from django.db import transaction
-from django.utils import timezone
-from django.shortcuts import get_object_or_404
 from django.db.models import F
+from django.shortcuts import get_object_or_404
+from django.utils import timezone
 
+from base.payment_services import payment_service
 from books.models import Book
 from borrowings.models import Borrowing
 from payments.models import Payment
-
-from base.payment_services import payment_service
 
 
 class PaymentProcessor:
@@ -47,3 +46,12 @@ class PaymentProcessor:
             )
 
         return {"message": "Payment was cancelled."}
+
+    @staticmethod
+    def check_if_session_valid(session_id: str) -> dict:
+        payment = get_object_or_404(Payment, session_id=session_id)
+
+        if payment.status != Payment.Status.PENDING:
+            return {"error": f"This payment was already {payment.status.lower()}."}
+
+        return {"message": "Session valid"}

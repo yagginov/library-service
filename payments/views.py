@@ -1,13 +1,13 @@
-from rest_framework import viewsets, status
-from rest_framework.permissions import IsAuthenticated
+from rest_framework import status, viewsets
 from rest_framework.decorators import action
-from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 from rest_framework.request import Request
+from rest_framework.response import Response
 
+from base.payment_services import payment_service
 from payments.models import Payment
 from payments.schemas import payment_viewset_schema
 from payments.serializers import PaymentSerializer
-from base.payment_services import payment_service
 from payments.services.payment import PaymentProcessor
 
 
@@ -46,8 +46,10 @@ class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        result = PaymentProcessor.mark_cancelled(session_id)
-        status_code = (
-            status.HTTP_400_BAD_REQUEST if "error" in result else status.HTTP_200_OK
+        result = PaymentProcessor.check_if_session_valid(session_id)
+        if "error" in result:
+            return Response(result, status=status.HTTP_400_BAD_REQUEST)
+        return Response(
+            {"message": "You can return to payment later."},
+            status=status.HTTP_200_OK,
         )
-        return Response(result, status=status_code)
