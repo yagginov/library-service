@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 import stripe
 from django.conf import settings
+from django.urls import reverse
 
 from base.dto import PaymentSessionData
 
@@ -22,7 +23,7 @@ class BasePaymentService(ABC):
 
 class StripePaymentService(BasePaymentService):
     def __init__(self):
-        stripe.api_key = settings.STRIPE_SERCRET_KEY
+        stripe.api_key = settings.STRIPE_SECRET_KEY
 
     def create_payment_session(self, data: PaymentSessionData):
         session = stripe.checkout.Session.create(
@@ -32,14 +33,14 @@ class StripePaymentService(BasePaymentService):
                     "price_data": {
                         "currency": "usd",
                         "product_data": data.product_data.model_dump(),
-                        "unit_amount": data.unit_amount * 100,
+                        "unit_amount": int(data.unit_amount * 100),
                     },
                     "quantity": data.quantity,
                 }
             ],
             mode="payment",
-            success_url=f"{settings.SITE_URL}/api/payments/success/?session_id={{CHECKOUT_SESSION_ID}}",
-            cancel_url= f"{settings.SITE_URL}/api/payments/cancel/?session_id={{CHECKOUT_SESSION_ID}}",
+            success_url=f"{settings.SITE_URL}{reverse('payments:payment-success')}?session_id={{CHECKOUT_SESSION_ID}}",
+            cancel_url= f"{settings.SITE_URL}{reverse('payments:payment-cancel')}?session_id={{CHECKOUT_SESSION_ID}}",
         )
         return session
 
