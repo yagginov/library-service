@@ -1,10 +1,10 @@
 from datetime import date, timedelta
 from decimal import Decimal
 
+from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
-from django.contrib.auth import get_user_model
 
 from books.models import Book
 from borrowings.models import Borrowing
@@ -155,7 +155,7 @@ class BorrowingAPITest(APITestCase):
         response = self.client.get(self.get_retrieve_url(self.borrowings[0].id))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
 
-    def test_retrieve_view_admin_own_borrowing(self):
+    def test_retrieve_view_admin_someone_else_borrowing(self):
         self.client.force_authenticate(self.admin)
         response = self.client.get(self.get_retrieve_url(self.borrowings[4].id))
         self.assertEqual(response.status_code, status.HTTP_200_OK)
