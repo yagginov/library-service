@@ -1,10 +1,5 @@
-from drf_spectacular.utils import (
-    extend_schema_view,
-    extend_schema,
-    OpenApiParameter
-)
 from drf_spectacular.types import OpenApiTypes
-
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 
 borrowings_viewset_schema = extend_schema_view(
     list=extend_schema(

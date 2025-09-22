@@ -1,5 +1,4 @@
-from drf_spectacular.utils import extend_schema_view, extend_schema
-
+from drf_spectacular.utils import extend_schema, extend_schema_view
 
 user_registration_schema = extend_schema(
     description="Create a new user account in the library system. "

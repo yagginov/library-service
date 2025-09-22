@@ -4,8 +4,8 @@ from rest_framework.filters import OrderingFilter, SearchFilter
 
 from base.permissions import IsAdminOrReadOnly
 from books.models import Book
-from books.serializers import BookSerializer
 from books.schemas import book_viewset_schema
+from books.serializers import BookSerializer
 
 
 @book_viewset_schema
