@@ -50,3 +50,6 @@ class StripePaymentService(BasePaymentService):
     def mark_session_as_expired(self, session_id):
         session = stripe.checkout.Session.expire(session_id)
         return session
+
+
+payment_service = StripePaymentService()
