@@ -191,7 +191,7 @@ SPECTACULAR_SETTINGS = {
             "name": "users",
             "description": "User management and profiles"
         }
-    ]
+    ],
 }
 
 SIMPLE_JWT = {
