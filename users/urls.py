@@ -1,11 +1,15 @@
 from django.urls import path
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+<<<<<<< HEAD
 from users.views import (
     UserProfileView,
     UserRegistrationView,
     ChangeUserPasswordView,
 )
+=======
+from users.views import ChangeUserPasswordView, UserProfileView, UserRegistrationView
+>>>>>>> 833943a (fixed with ruff)
 
 urlpatterns = [
     path("", UserRegistrationView.as_view(), name="register"),
