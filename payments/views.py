@@ -2,8 +2,8 @@ from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated
 
 from payments.models import Payment
-from payments.serializers import PaymentSerializer
 from payments.schemas import payment_viewset_schema
+from payments.serializers import PaymentSerializer
 
 
 @payment_viewset_schema
