@@ -32,9 +32,7 @@ class UserRegistrationSerializer(serializers.ModelSerializer):
 
     def validate_email(self, value):
         if User.objects.filter(email=value).exists():
-            raise serializers.ValidationError(
-                "This email is already being used by someone."
-            )
+            raise serializers.ValidationError("This email is already being used by someone.")
         return value
 
     def validate(self, attrs):
