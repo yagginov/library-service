@@ -3,8 +3,10 @@ from rest_framework.permissions import IsAuthenticated
 
 from payments.models import Payment
 from payments.serializers import PaymentSerializer
+from payments.schemas import payment_viewset_schema
 
 
+@payment_viewset_schema
 class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = PaymentSerializer
     permission_classes = [IsAuthenticated]
