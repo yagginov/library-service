@@ -1,7 +1,6 @@
 from rest_framework import generics
 from rest_framework.generics import CreateAPIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.permissions import AllowAny
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from users.schemas import user_profile_schema, user_registration_schema
 from users.serializers import UserProfileSerializer, UserRegistrationSerializer
