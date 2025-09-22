@@ -1,0 +1,86 @@
+services:
+  server:
+    build:
+      context: .
+    restart: always
+    env_file:
+      - .env
+    ports:
+      - "8000:8000"
+    depends_on:
+      - db
+      - redis
+    volumes:
+      - .:/app
+    command: >
+      sh -c "python manage.py migrate &&
+             python manage.py runserver 0.0.0.0:8000"
+
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data_drf_jun:/data
+    restart: always
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  celery:
+    build: .
+    env_file:
+      - .env
+    container_name: celery
+    restart: always
+    command: sh -c "celery -A config worker --loglevel=info"
+    volumes:
+      - .:/usr/src
+    depends_on:
+      - db
+      - redis
+      - server
+    environment:
+      - CELERY_BROKER_URL=${CELERY_BROKER_URL}
+      - CELERY_RESULT_BACKEND=${CELERY_RESULT_BACKEND}
+
+  celery-flower:
+    build:
+      context: .
+    container_name: celery-flower
+    restart: always
+    ports:
+      - "5555:5555"
+    depends_on:
+      - redis
+      - celery
+    command: sh -c "celery -A config --broker=${CELERY_BROKER_URL} flower --port=5555"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+
+  db:
+    image: postgres:17
+    env_file:
+      - .env
+    restart: always
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    ports:
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD", "pg_isready", "-h", "db"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+    volumes:
+      - db-data:/var/lib/postgresql/data
+
+volumes:
+  db-data:
+  redis_data_drf_jun:
