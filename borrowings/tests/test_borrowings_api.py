@@ -1,11 +1,14 @@
 from datetime import date, timedelta
 from decimal import Decimal
+from unittest.mock import Mock, patch
 
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from base.dto import PaymentType
+from base.fine_service import FineService, fine_service
 from books.models import Book
 from borrowings.models import Borrowing
 from borrowings.serializers import BorrowingCreateSerializer
@@ -359,3 +362,139 @@ class BorrowingAPITest(APITestCase):
         self.assertTrue(serializer.is_valid())
         borrowing = serializer.save()
         self.assertEqual(borrowing.user, clean_user)
+
+
+class TestBorrowingCustomAction(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(
+            email="user@test.com",
+            password="password"
+        )
+        self.admin = User.objects.create_superuser(
+            email="admin@test.com",
+            password="password"
+        )
+        self.book = Book.objects.create(
+            title="Test Book",
+            author="Test Author",
+            inventory=5,
+            daily_fee=Decimal("10.00")
+        )
+
+    def get_return_book_url(self, borrowing_id):
+        return reverse("borrowings:borrowings-return-book", args=[borrowing_id])
+
+    def test_fine_service_no_fine_for_not_overdue(self):
+        borrowing = Borrowing.objects.create(
+            user=self.user,
+            book=self.book,
+            expected_return_date=date.today() + timedelta(days=7)
+        )
+
+        result = fine_service.create_fine_payment_if_overdue(borrowing)
+        self.assertIsNone(result)
+
+    def test_fine_service_no_fine_for_on_time_return(self):
+        expected_date = date.today() + timedelta(days=5)
+        borrowing = Borrowing.objects.create(
+            user=self.user,
+            book=self.book,
+            expected_return_date=expected_date,
+            actual_return_date=expected_date
+        )
+
+        result = fine_service.create_fine_payment_if_overdue(borrowing)
+        self.assertIsNone(result)
+
+    @patch('base.fine_service.PaymentProcessor.create_payment_by_borrowing')
+    def test_fine_service_creates_fine_for_overdue(self, mock_payment_processor):
+        borrowing = Borrowing.objects.create(
+            user=self.user,
+            book=self.book,
+            expected_return_date=date.today() - timedelta(days=3),
+            actual_return_date=date.today()
+        )
+
+        mock_payment = Mock(spec=Payment)
+        mock_payment_processor.return_value = mock_payment
+
+        result = fine_service.create_fine_payment_if_overdue(borrowing)
+
+        self.assertEqual(result, mock_payment)
+        mock_payment_processor.assert_called_once()
+
+        args, kwargs = mock_payment_processor.call_args
+        borrowing_arg, payment_data = args
+
+        self.assertEqual(borrowing_arg, borrowing)
+        self.assertEqual(payment_data.type, PaymentType.FINE)
+        self.assertEqual(payment_data.price, self.book.daily_fee)
+        self.assertEqual(payment_data.rent_days, 3)
+
+    def test_fine_service_calculate_overdue_days(self):
+        borrowing = Borrowing.objects.create(
+            user=self.user,
+            book=self.book,
+            expected_return_date=date.today() - timedelta(days=5),
+            actual_return_date=date.today() - timedelta(days=1)
+        )
+
+        result = FineService._calculate_overdue_days(borrowing)
+        self.assertEqual(result, 4)
+
+    def test_fine_service_is_overdue_logic(self):
+        # Not returned yet
+        borrowing1 = Borrowing.objects.create(
+            user=self.user,
+            book=self.book,
+            expected_return_date=date.today() - timedelta(days=5),
+        )
+        self.assertFalse(FineService._is_overdue(borrowing1))
+
+        # Returned on time
+        borrowing2 = Borrowing.objects.create(
+            user=self.user,
+            book=self.book,
+            expected_return_date=date.today(),
+            actual_return_date=date.today() - timedelta(days=1),
+        )
+        self.assertFalse(FineService._is_overdue(borrowing2))
+
+        # Overdue
+        borrowing3 = Borrowing.objects.create(
+            user=self.user,
+            book=self.book,
+            expected_return_date=date.today() - timedelta(days=2),
+            actual_return_date=date.today(),
+        )
+        self.assertTrue(FineService._is_overdue(borrowing3))
+
+    @patch('base.fine_service.fine_service.create_fine_payment_if_overdue')
+    def test_return_book_success_with_fine(self, mock_fine_service):
+        borrowing = Borrowing.objects.create(
+            user=self.user,
+            book=self.book,
+            expected_return_date=date.today() - timedelta(days=5),
+        )
+
+        mock_payment = Mock()
+        mock_payment.id = 123
+        mock_payment.money_to_pay = Decimal("25.00")
+        mock_payment.session_url = "https://stripe.com/session/123"
+        mock_payment.status = Payment.Status.PENDING
+        mock_fine_service.return_value = mock_payment
+
+        self.client.force_authenticate(self.user)
+        response = self.client.post(self.get_return_book_url(borrowing.id))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+        mock_fine_service.assert_called_once_with(borrowing)
+
+        self.assertIn("fine_payment", response.data)
+        fine_payment_data = response.data["fine_payment"]
+        self.assertEqual(fine_payment_data["id"], 123)
+        self.assertEqual(fine_payment_data["amount"], "25.00")
+        self.assertEqual(fine_payment_data["session_url"], "https://stripe.com/session/123")
+        self.assertEqual(fine_payment_data["status"], Payment.Status.PENDING)
+        self.assertIn("Fine payment created", fine_payment_data["message"])
