@@ -6,8 +6,8 @@ from rest_framework.response import Response
 from base.permissions import IsAdminOrOwnerWithCreatePermission
 from borrowings.filters import BorrowingFilter
 from borrowings.models import Borrowing
-from borrowings.serializers import BorrowingCreateSerializer, BorrowingDetailSerializer
 from borrowings.schemas import borrowings_viewset_schema
+from borrowings.serializers import BorrowingCreateSerializer, BorrowingDetailSerializer
 
 
 @borrowings_viewset_schema
