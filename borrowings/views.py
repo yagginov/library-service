@@ -4,6 +4,7 @@ from rest_framework.decorators import action
 from rest_framework.response import Response
 
 from base.permissions import IsAdminOrOwnerWithCreatePermission
+from base.fine_service import fine_service
 from borrowings.filters import BorrowingFilter
 from borrowings.models import Borrowing
 from borrowings.schemas import borrowings_viewset_schema
@@ -32,9 +33,22 @@ class BorrowingViewSet(
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
+        fine_payment = fine_service.create_fine_payment_if_overdue(borrowing)
+
         borrowing.refresh_from_db()
         serializer = self.get_serializer(borrowing)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        response_data = serializer.data
+
+        if fine_payment:
+            response_data["fine_payment"] = {
+                "id": fine_payment.id,
+                "amount": str(fine_payment.money_to_pay),
+                "session_url": fine_payment.session_url,
+                "status": fine_payment.status,
+                "message": "Fine payment created due to overdue return. "
+                           "Please complete the payment.",
+            }
+        return Response(response_data, status=status.HTTP_200_OK)
 
     def get_queryset(self):
         queryset = Borrowing.objects.select_related("book", "user")
