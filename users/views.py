@@ -8,13 +8,13 @@ from users.serializers import ChangeUserPassword, UserProfileSerializer, UserReg
 @user_registration_schema
 class UserRegistrationView(generics.CreateAPIView):
     serializer_class = UserRegistrationSerializer
-    permission_classes = [AllowAny,]
+    permission_classes = [AllowAny]
 
 
 @user_profile_schema
 class UserProfileView(generics.RetrieveUpdateAPIView):
     serializer_class = UserProfileSerializer
-    permission_classes = [IsAuthenticated,]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.request.user
@@ -22,7 +22,7 @@ class UserProfileView(generics.RetrieveUpdateAPIView):
 
 class ChangeUserPasswordView(generics.UpdateAPIView):
     serializer_class = ChangeUserPassword
-    permission_classes = [IsAuthenticated,]
+    permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.request.user
