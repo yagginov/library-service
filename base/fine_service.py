@@ -34,22 +34,21 @@ class FineService:
 
     @staticmethod
     def _calculate_overdue_days(borrowing: Borrowing) -> int:
-        return (borrowing.actual_return_date - borrowing.expected_return_date).days
+        return abs((borrowing.actual_return_date - borrowing.expected_return_date).days)
 
     @staticmethod
     def _prepare_fine_payment_data(
             borrowing: Borrowing,
             days_overdue: int
     ) -> PaymentData:
-        total_fine_amount = days_overdue * borrowing.book.daily_fee * Decimal(
-            str(fine_multiplier)
-        )
-        rent_days = (borrowing.expected_return_date - borrowing.borrow_date).days
-        adjusted_price = total_fine_amount / rent_days if rent_days > 0 else total_fine_amount
+        overdue_days = FineService._calculate_overdue_days(borrowing)
+        price = borrowing.book.daily_fee
 
         return PaymentData(
             type=PaymentType.FINE,
-            price=adjusted_price,
+            price=price,
+            rent_days=overdue_days,
+            fine_multiplier=fine_multiplier,
             product_data=ProductData(
                 name=f"Fine for overdue: {borrowing.book.title}",
                 description=f"Book overdue for {days_overdue} days. "
