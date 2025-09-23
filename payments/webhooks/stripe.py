@@ -38,19 +38,5 @@ def stripe_webhook(request):
         payment = get_object_or_404(Payment, session_id=session.id)
         payment.status = Payment.Status.EXPIRED
         payment.save()
-        borrowing = payment.borrowing
-        book = borrowing.book
-
-        rent_day = (borrowing.expected_return_date - borrowing.borrow_date).days
-
-        payment_data = PaymentData()
-        payment_data.product_data = ProductData(
-            name=book.title,
-            description=f"author: {book.author}",
-        )
-        payment_data.price = book.daily_fee
-        payment_data.rent_days = rent_day
-
-        _ = PaymentProcessor.create_payment_by_borrowing(borrowing, payment_data)
         
     return HttpResponse(status=200)
