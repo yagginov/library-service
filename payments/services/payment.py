@@ -7,7 +7,8 @@ from base.payment_services import payment_service
 from books.models import Book
 from borrowings.models import Borrowing
 from payments.models import Payment
-
+from base.dto import PaymentData, PaymentSessionData
+from base import exceptions
 
 class PaymentProcessor:
     @staticmethod
@@ -55,3 +56,29 @@ class PaymentProcessor:
             return {"error": f"This payment was already {payment.status.lower()}."}
 
         return {"message": "Session valid"}
+
+    @staticmethod
+    def create_payment_by_borrowing(borrowing: Borrowing, payment_data: PaymentData):
+        rent_day = (borrowing.expected_return_date - borrowing.borrow_date).days
+        book_price = payment_data.price
+        total_amount = rent_day * book_price * payment_data.fine_multiplier
+
+        payment_session_data = PaymentSessionData(
+            product_data=payment_data.product_data,
+            unit_amount=total_amount,
+            quantity=1,
+        )
+
+        session = payment_service.create_payment_session(payment_session_data)
+
+        if not session:
+            raise exceptions.PaymentSessionCreationError()
+
+        return Payment.objects.create(
+            status=payment_data.status,
+            type=payment_data.type,
+            borrowing=borrowing,
+            money_to_pay=total_amount,
+            session_id=session.id,
+            session_url=session.url,
+        )

@@ -104,7 +104,7 @@ class TestPaymentAutomations(APITestCase):
     def setUp(self):
         self.client.force_authenticate(self.user)
 
-    @patch("base.borrowing_service.payment_service")
+    @patch("payments.services.payment.payment_service")
     def test_payment_automatic_creation(self, mock_payment_service):
         session = MagicMock()
         session.url = "http://payments-url/"
