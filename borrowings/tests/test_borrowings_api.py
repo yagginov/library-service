@@ -15,6 +15,17 @@ from borrowings.serializers import BorrowingCreateSerializer
 from payments.models import Payment
 
 User = get_user_model()
+patcher = None
+
+
+def setUpModule():
+    global patcher
+    patcher = patch("borrowings.signals.send_new_borrowing_notification.delay")
+    patcher.start()
+
+
+def tearDownModule():
+    patcher.stop()
 
 
 class BorrowingModelTest(APITestCase):
