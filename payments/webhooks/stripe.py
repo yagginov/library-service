@@ -7,6 +7,8 @@ from django.views.decorators.csrf import csrf_exempt
 from django.shortcuts import get_object_or_404
 
 from payments.models import Payment
+from base.dto import PaymentData, ProductData
+from payments.services.payment import PaymentProcessor
 
 stripe.api_key = settings.STRIPE_SECRET_KEY
 
@@ -35,7 +37,20 @@ def stripe_webhook(request):
         session = event.data.object
         payment = get_object_or_404(Payment, session_id=session.id)
         payment.status = Payment.Status.EXPIRED
+        payment.save()
+        borrowing = payment.borrowing
+        book = borrowing.book
 
-        # TODO Add new payment creation
+        rent_day = (borrowing.expected_return_date - borrowing.borrow_date).days
+
+        payment_data = PaymentData()
+        payment_data.product_data = ProductData(
+            name=book.title,
+            description=f"author: {book.author}",
+        )
+        payment_data.price = book.daily_fee
+        payment_data.rent_days = rent_day
+
+        _ = PaymentProcessor.create_payment_by_borrowing(borrowing, payment_data)
         
     return HttpResponse(status=200)
