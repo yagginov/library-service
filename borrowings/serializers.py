@@ -59,11 +59,9 @@ class BorrowingCreateSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = self.context["request"].user
-        book = validated_data["book"]
-        borrowing = Borrowing(user=user, **validated_data)
 
         try:
-            borrowing = borrowing_service.create_borrowing(borrowing, book, PaymentData())
+            borrowing = borrowing_service.create_borrowing(payment_data=PaymentData(), user=user, **validated_data)
         except exceptions.PaymentSessionCreationError as e:
             raise serializers.ValidationError(e)
         except exceptions.BookNotAvailableError as e:
