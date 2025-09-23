@@ -60,13 +60,9 @@ class PaymentProcessor:
 
     @staticmethod
     def create_payment_by_borrowing(borrowing: Borrowing, payment_data: PaymentData):
-        rent_day = (borrowing.expected_return_date - borrowing.borrow_date).days
-        book_price = payment_data.price
-        total_amount = rent_day * book_price * payment_data.fine_multiplier
-
         payment_session_data = PaymentSessionData(
             product_data=payment_data.product_data,
-            unit_amount=total_amount,
+            unit_amount=payment_data.price * payment_data.rent_days * payment_data.fine_multiplier,
             quantity=1,
         )
 
@@ -79,7 +75,7 @@ class PaymentProcessor:
             status=payment_data.status,
             type=payment_data.type,
             borrowing=borrowing,
-            money_to_pay=total_amount,
+            money_to_pay=payment_session_data.unit_amount,
             session_id=session.id,
             session_url=session.url,
         )
