@@ -28,7 +28,7 @@ class BorrowingCreateSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ["id", "borrow_date", "actual_return_date"]
 
-    def validate_deny(self, value):
+    def validate(self, attrs):
         user = self.context["request"].user
 
         pending_payments = Payment.objects.filter(
@@ -40,7 +40,7 @@ class BorrowingCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError(
                 "You cannot borrow new books while you have pending payments."
             )
-        return value
+        return attrs
 
     def validate_book(self, value):
         if value.inventory <= 0:
