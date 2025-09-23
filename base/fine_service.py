@@ -3,11 +3,10 @@ from typing import Optional
 
 from django.conf import settings
 
-from base.dto import PaymentData, ProductData, PaymentType
+from base.dto import PaymentData, PaymentType, ProductData
 from borrowings.models import Borrowing
 from payments.models import Payment
 from payments.services.payment import PaymentProcessor
-
 
 fine_multiplier = settings.FINE_MULTIPLIER
 
