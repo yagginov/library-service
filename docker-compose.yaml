@@ -64,6 +64,22 @@ services:
     volumes:
       - .:/app
 
+  celery-beat:
+    build: .
+    container_name: celery_beat
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    depends_on:
+      - postgres
+      - redis
+    command: celery -A config beat --loglevel=info --scheduler django_celery_beat.schedulers:DatabaseScheduler
+    environment:
+      - CELERY_BROKER_URL=redis://redis:6379/0
+      - CELERY_RESULT_BACKEND=redis://redis:6379/0
+
   postgres:
     image: postgres:17
     env_file:
