@@ -1,3 +1,4 @@
+import time
 from abc import ABC, abstractmethod
 
 import stripe
@@ -41,6 +42,7 @@ class StripePaymentService(BasePaymentService):
             mode="payment",
             success_url=f"{settings.SITE_URL}{reverse('payments:payment-success')}?session_id={{CHECKOUT_SESSION_ID}}",
             cancel_url= f"{settings.SITE_URL}{reverse('payments:payment-cancel')}?session_id={{CHECKOUT_SESSION_ID}}",
+            expires_at=int(time.time()) + 1802,
         )
         return session
 
