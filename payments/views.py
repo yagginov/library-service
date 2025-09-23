@@ -46,7 +46,7 @@ class PaymentViewSet(viewsets.ReadOnlyModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST,
             )
 
-        result = PaymentProcessor.check_if_session_valid(session_id)
+        result = PaymentProcessor.check_if_session_valid(session_id, request.user)
         if "error" in result:
             return Response(result, status=status.HTTP_400_BAD_REQUEST)
         return Response(
