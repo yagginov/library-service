@@ -7,12 +7,23 @@ from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
 
-from base import exceptions
 from books.models import Book
 from borrowings.models import Borrowing
 from payments.models import Payment
 
 User = get_user_model()
+patcher = None
+
+
+def setUpModule():
+    global patcher
+    patcher = patch("borrowings.signals.send_new_borrowing_notification.delay")
+    patcher.start()
+
+
+def tearDownModule():
+    patcher.stop()
+
 
 class TestPaymentViewSet(APITestCase):
     @classmethod
