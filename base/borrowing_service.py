@@ -2,52 +2,24 @@ from django.db import transaction
 from django.db.models import F
 
 from base import exceptions
-from base.dto import PaymentData, PaymentSessionData, ProductData
-from base.payment_services import payment_service
+from base.dto import PaymentData, ProductData
 from books.models import Book
 from borrowings.models import Borrowing
-from payments.models import Payment
+from payments.services.payment import PaymentProcessor
 
 
 class BorrowingService:
-    def create_borrowing(
-        self,
-        borrowing: Borrowing,
-        book: Book,
-        data: PaymentData,
-    ):
+    def create_borrowing(self, payment_data: PaymentData, **kwargs):
         with transaction.atomic():
-            borrowing.save()
-            # calculate total amount
-            rent_day = (borrowing.expected_return_date - borrowing.borrow_date).days
-            book_price = book.daily_fee
-            total_amount = rent_day * book_price * data.fine_multiplier
+            borrowing = Borrowing.objects.create(**kwargs)
+            book = borrowing.book
 
-            # data generation for transmission to the service
-            product_data = ProductData(
+            payment_data.product_data = ProductData(
                 name=book.title,
                 description=f"author: {book.author}",
             )
-            payment_data = PaymentSessionData(
-                product_data=product_data,
-                unit_amount=total_amount,
-                quantity=1,
-            )
-
-            # create session
-            session = payment_service.create_payment_session(payment_data)
-
-            if not session:
-                raise exceptions.PaymentSessionCreationError()
-
-            Payment.objects.create(
-                status=data.status,
-                type=data.type,
-                borrowing=borrowing,
-                money_to_pay=total_amount,
-                session_id=session.id,
-                session_url=session.url,
-            )
+            payment_data.price = book.daily_fee
+            payment = PaymentProcessor.create_payment_by_borrowing(borrowing, payment_data)
 
             updated = Book.objects.filter(pk=book.pk, inventory__gte=1).update(
                 inventory=F("inventory") - 1,
