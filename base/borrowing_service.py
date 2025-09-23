@@ -19,7 +19,7 @@ class BorrowingService:
                 description=f"author: {book.author}",
             )
             payment_data.price = book.daily_fee
-            payment = PaymentProcessor.create_payment_by_borrowing(borrowing, payment_data)
+            _ = PaymentProcessor.create_payment_by_borrowing(borrowing, payment_data)
 
             updated = Book.objects.filter(pk=book.pk, inventory__gte=1).update(
                 inventory=F("inventory") - 1,
