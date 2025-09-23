@@ -33,3 +33,4 @@ class PaymentData(BaseModel):
     fine_multiplier: Decimal = Field(gt=Decimal("0.0"), default=Decimal("1.0"))
     product_data: ProductData = Field(default_factory=lambda: ProductData())
     price: Decimal = Field(gt=Decimal("0.0"), default=Decimal("1.0"))
+    rent_days: int = Field(gt=1, default=1)
