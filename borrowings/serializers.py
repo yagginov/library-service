@@ -1,13 +1,18 @@
+from datetime import date
+
 from django.db import transaction
 from django.db.models import F
 from rest_framework import serializers
 
 from books.models import Book
+from books.serializers import BookSerializer
 from borrowings.models import Borrowing
 
 
 class BorrowingCreateSerializer(serializers.ModelSerializer):
-    book = serializers.PrimaryKeyRelatedField(queryset=Book.objects.all())
+    book = serializers.PrimaryKeyRelatedField(
+        queryset=Book.objects.only("id", "inventory")
+    )
     borrow_date = serializers.DateField(read_only=True)
 
     class Meta:
@@ -26,6 +31,13 @@ class BorrowingCreateSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Book is not available.")
         return value
 
+    def validate_expected_return_date(self, value):
+        if value < date.today():
+            raise serializers.ValidationError(
+                "Expected return date cannot be in the past."
+            )
+        return value
+
     def create(self, validated_data):
         user = self.context["request"].user
         book = validated_data["book"]
@@ -40,3 +52,20 @@ class BorrowingCreateSerializer(serializers.ModelSerializer):
             borrowing = Borrowing.objects.create(user=user, **validated_data)
 
         return borrowing
+
+
+class BorrowingDetailSerializer(serializers.ModelSerializer):
+    book = BookSerializer(read_only=True)
+    user = serializers.StringRelatedField(read_only=True)
+
+    class Meta:
+        model = Borrowing
+        fields = [
+            "id",
+            "user",
+            "book",
+            "borrow_date",
+            "expected_return_date",
+            "actual_return_date",
+        ]
+        read_only_fields = fields
