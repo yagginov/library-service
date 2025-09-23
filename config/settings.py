@@ -11,6 +11,7 @@ https://docs.djangoproject.com/en/5.2/ref/settings/
 """
 import os
 from datetime import timedelta
+from decimal import Decimal
 from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
@@ -22,6 +23,9 @@ SECRET_KEY = os.environ["DJANGO_SECRET_KEY"]
 DEBUG = os.getenv("DEBUG", False) in ("True", "true", "1")
 
 ALLOWED_HOSTS = []
+
+
+SITE_URL = os.getenv("SITE_URL", "http://127.0.0.1:8000")
 
 
 # Application definition
@@ -37,6 +41,8 @@ INSTALLED_APPS = [
     # Third-party apps
     "rest_framework",
     "django_filters",
+    "django_celery_beat",
+    "drf_spectacular",
 
     # Local apps
     "users",
@@ -145,7 +151,51 @@ AUTH_USER_MODEL = "users.User"
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": (
         "rest_framework_simplejwt.authentication.JWTAuthentication",
-    )
+    ),
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+    "DEFAULT_THROTTLE_CLASSES": [
+        "rest_framework.throttling.AnonRateThrottle",
+        "rest_framework.throttling.UserRateThrottle",
+    ],
+    "DEFAULT_THROTTLE_RATES": {
+        "anon": "100/day",
+        "user": "1000/day",
+    },
+}
+
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Library API",
+    "DESCRIPTION": "A library management system that enables "
+                   "users to browse and borrow books online.",
+    "COMPONENTS": {
+        "securitySchemes": {
+            "CustomAuth": {
+                "type": "apiKey",
+                "in": "header",
+                "name": "HTTP_AUTHORIZE",
+                "description": "JWT token with Bearer prefix in HTTP_AUTHORIZE header"
+            }
+        }
+    },
+    "SECURITY": [{"CustomAuth": []}],
+    "TAGS": [
+        {
+            "name": "library",
+            "description": "Book catalog and inventory management"
+        },
+        {
+            "name": "borrowings",
+            "description": "Borrowing and return operations"
+        },
+        {
+            "name": "payments",
+            "description": "Payment processing and billing"
+        },
+        {
+            "name": "users",
+            "description": "User management and profiles"
+        }
+    ],
 }
 
 SIMPLE_JWT = {
@@ -158,3 +208,15 @@ SIMPLE_JWT = {
 TG_API_TOKEN = os.environ["TG_API_TOKEN"]
 
 CHAT_ID = os.environ["CHAT_ID"]
+
+CELERY_BROKER_URL = "redis://redis:6379/0"
+CELERY_RESULT_BACKEND = "redis://redis:6379/0"
+CELERY_TIMEZONE = "Europe/Kyiv"
+CELERY_TASK_TRACK_STARTED = True
+CELERY_TASK_TIME_LIMIT = 30 * 60
+CELERY_BEAT_SCHEDULER = 'django_celery_beat.schedulers:DatabaseScheduler'
+
+STRIPE_PUBLISHABLE_KEY = os.environ["STRIPE_PUBLISHABLE_KEY"]
+STRIPE_SECRET_KEY = os.environ["STRIPE_SECRET_KEY"]
+
+FINE_MULTIPLIER = Decimal("2.0")

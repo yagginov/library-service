@@ -79,3 +79,31 @@ class TestUserRegistrationViewSet(APITestCase):
         response = self.client.post(self.url, self.user_data)
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("password1", response.data)
+
+
+class TestUserProfileView(APITestCase):
+    def setUp(self):
+        self.user = User.objects.create(
+            email="test@test.com",
+            password="testpass",
+            first_name="name",
+            last_name="last_name"
+        )
+        self.client.force_authenticate(user=self.user)
+        self.url = reverse("users:me")
+
+    def test_get_user_profile(self):
+        response = self.client.get(self.url)
+        self.url = reverse("users:me")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIn("first_name", response.data)
+        self.assertIn("last_name", response.data)
+        self.assertIn("email", response.data)
+
+    def test_update_user_profile(self):
+        response = self.client.patch(
+            self.url, {"email": "test1@test.com"}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.user.refresh_from_db()
+        self.assertEqual(self.user.email, "test1@test.com")
