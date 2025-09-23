@@ -14,11 +14,15 @@ class BorrowingService:
             borrowing = Borrowing.objects.create(**kwargs)
             book = borrowing.book
 
+            rent_day = (borrowing.expected_return_date - borrowing.borrow_date).days
+
             payment_data.product_data = ProductData(
                 name=book.title,
                 description=f"author: {book.author}",
             )
             payment_data.price = book.daily_fee
+            payment_data.rent_days = rent_day
+
             _ = PaymentProcessor.create_payment_by_borrowing(borrowing, payment_data)
 
             updated = Book.objects.filter(pk=book.pk, inventory__gte=1).update(
