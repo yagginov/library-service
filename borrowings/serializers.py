@@ -7,6 +7,7 @@ from rest_framework import serializers
 from books.models import Book
 from books.serializers import BookSerializer
 from borrowings.models import Borrowing
+from payments.models import Payment
 from payments.serializers import PaymentSerializer
 
 
@@ -26,6 +27,20 @@ class BorrowingCreateSerializer(serializers.ModelSerializer):
             "actual_return_date",
         ]
         read_only_fields = ["id", "borrow_date", "actual_return_date"]
+
+    def validate(self, attrs):
+        user = self.context["request"].user
+
+        pending_payments = Payment.objects.filter(
+            borrowing__user=user,
+            status=Payment.Status.PENDING,
+        ).exists()
+
+        if pending_payments:
+            raise serializers.ValidationError(
+                "You cannot borrow new books while you have pending payments."
+            )
+        return attrs
 
     def validate_book(self, value):
         if value.inventory <= 0:
