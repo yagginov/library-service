@@ -3,6 +3,7 @@ from rest_framework import mixins, status, viewsets
 from rest_framework.decorators import action
 from rest_framework.response import Response
 
+from base.borrowing_service import borrowing_service
 from base.fine_service import fine_service
 from base.permissions import IsAdminOrOwnerWithCreatePermission
 from borrowings.filters import BorrowingFilter
@@ -10,8 +11,6 @@ from borrowings.models import Borrowing
 from borrowings.schemas import borrowings_viewset_schema
 from borrowings.serializers import BorrowingCreateSerializer, BorrowingDetailSerializer
 from payments.models import Payment
-from base.fine_service import fine_service
-from base.borrowing_service import borrowing_service
 
 
 @borrowings_viewset_schema

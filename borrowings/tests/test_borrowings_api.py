@@ -509,3 +509,306 @@ class TestBorrowingCustomAction(APITestCase):
         self.assertEqual(fine_payment_data["session_url"], "https://stripe.com/session/123")
         self.assertEqual(fine_payment_data["status"], Payment.Status.PENDING)
         self.assertIn("Fine payment created", fine_payment_data["message"])
+
+    def get_renew_payment_url(self, borrowing_id):
+        return reverse("borrowings:borrowings-renew-payment", args=[borrowing_id])
+
+    @patch("base.borrowing_service.borrowing_service.renew_payment_for_borrowing")
+    def test_renew_payment_creates_new_payment_when_no_payment_exists(self, mock_borrowing_service):
+        borrowing = Borrowing.objects.create(
+            user=self.user,
+            book=self.book,
+            expected_return_date=date.today() + timedelta(days=7)
+        )
+
+        mock_payment = Mock()
+        mock_payment.id = 456
+        mock_borrowing_service.return_value = mock_payment
+
+        self.client.force_authenticate(self.user)
+        response = self.client.post(self.get_renew_payment_url(borrowing.id))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        mock_borrowing_service.assert_called_once_with(borrowing)
+
+        self.assertEqual(len(response.data), 1)
+        self.assertIn("payment", response.data[0])
+        self.assertEqual(response.data[0]["payment"], "New payment created with id 456")
+
+    def test_renew_payment_returns_message_when_pending_payment_exists(self):
+        borrowing = Borrowing.objects.create(
+            user=self.user,
+            book=self.book,
+            expected_return_date=date.today() + timedelta(days=7)
+        )
+
+        Payment.objects.create(
+            borrowing=borrowing,
+            type=Payment.Type.PAYMENT,
+            status=Payment.Status.PENDING,
+            money_to_pay=Decimal("50.00"),
+            session_url="https://stripe.com/session/pending",
+            session_id="session_pending"
+        )
+
+        self.client.force_authenticate(self.user)
+        response = self.client.post(self.get_renew_payment_url(borrowing.id))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertIn("payment", response.data[0])
+        self.assertEqual(response.data[0]["payment"], "Active payment already exists")
+
+    def test_renew_payment_nothing_to_pay_when_paid_payment_exists(self):
+        borrowing = Borrowing.objects.create(
+            user=self.user,
+            book=self.book,
+            expected_return_date=date.today() + timedelta(days=7)
+        )
+
+        Payment.objects.create(
+            borrowing=borrowing,
+            type=Payment.Type.PAYMENT,
+            status=Payment.Status.PAID,
+            money_to_pay=Decimal("50.00"),
+            session_url="https://stripe.com/session/paid",
+            session_id="session_paid"
+        )
+
+        self.client.force_authenticate(self.user)
+        response = self.client.post(self.get_renew_payment_url(borrowing.id))
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("message", response.data)
+        self.assertEqual(response.data["message"], "Nothing to pay")
+
+    @patch("base.fine_service.fine_service.create_fine_payment_if_overdue")
+    def test_renew_payment_creates_fine_for_returned_overdue_borrowing(self, mock_fine_service):
+        borrowing = Borrowing.objects.create(
+            user=self.user,
+            book=self.book,
+            expected_return_date=date.today() - timedelta(days=3),
+            actual_return_date=date.today()
+        )
+
+        Payment.objects.create(
+            borrowing=borrowing,
+            type=Payment.Type.PAYMENT,
+            status=Payment.Status.PAID,
+            money_to_pay=Decimal("50.00"),
+            session_url="https://stripe.com/session/paid",
+            session_id="session_paid"
+        )
+
+        mock_fine_payment = Mock()
+        mock_fine_payment.id = 789
+        mock_fine_service.return_value = mock_fine_payment
+
+        self.client.force_authenticate(self.user)
+        response = self.client.post(self.get_renew_payment_url(borrowing.id))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        mock_fine_service.assert_called_once_with(borrowing)
+        
+        self.assertEqual(len(response.data), 1)
+        self.assertIn("fine", response.data[0])
+        self.assertEqual(response.data[0]["fine"], "New fine created with id 789")
+
+    @patch("base.fine_service.fine_service.create_fine_payment_if_overdue")
+    def test_renew_payment_no_fine_for_returned_on_time_borrowing(self, mock_fine_service):
+        borrowing = Borrowing.objects.create(
+            user=self.user,
+            book=self.book,
+            expected_return_date=date.today(),
+            actual_return_date=date.today() - timedelta(days=1)
+        )
+
+        Payment.objects.create(
+            borrowing=borrowing,
+            type=Payment.Type.PAYMENT,
+            status=Payment.Status.PAID,
+            money_to_pay=Decimal("50.00"),
+            session_url="https://stripe.com/session/paid",
+            session_id="session_paid"
+        )
+
+        mock_fine_service.return_value = None
+
+        self.client.force_authenticate(self.user)
+        response = self.client.post(self.get_renew_payment_url(borrowing.id))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        mock_fine_service.assert_called_once_with(borrowing)
+        
+        self.assertEqual(len(response.data), 1)
+        self.assertIn("fine", response.data[0])
+        self.assertEqual(response.data[0]["fine"], "You are not overdue your borrowing")
+
+    def test_renew_payment_returns_message_when_pending_fine_exists(self):
+        borrowing = Borrowing.objects.create(
+            user=self.user,
+            book=self.book,
+            expected_return_date=date.today() - timedelta(days=3),
+            actual_return_date=date.today()
+        )
+        
+        Payment.objects.create(
+            borrowing=borrowing,
+            type=Payment.Type.PAYMENT,
+            status=Payment.Status.PAID,
+            money_to_pay=Decimal("50.00"),
+            session_url="https://stripe.com/session/paid",
+            session_id="session_paid"
+        )
+
+        Payment.objects.create(
+            borrowing=borrowing,
+            type=Payment.Type.FINE,
+            status=Payment.Status.PENDING,
+            money_to_pay=Decimal("30.00"),
+            session_url="https://stripe.com/session/fine_pending",
+            session_id="session_fine_pending"
+        )
+
+        self.client.force_authenticate(self.user)
+        response = self.client.post(self.get_renew_payment_url(borrowing.id))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertIn("fine", response.data[0])
+        self.assertEqual(response.data[0]["fine"], "Active fine payment already exists")
+
+    def test_renew_payment_nothing_to_pay_when_fine_already_paid(self):
+        borrowing = Borrowing.objects.create(
+            user=self.user,
+            book=self.book,
+            expected_return_date=date.today() - timedelta(days=3),
+            actual_return_date=date.today()
+        )
+
+        Payment.objects.create(
+            borrowing=borrowing,
+            type=Payment.Type.PAYMENT,
+            status=Payment.Status.PAID,
+            money_to_pay=Decimal("50.00"),
+            session_url="https://stripe.com/session/paid",
+            session_id="session_paid"
+        )
+
+        Payment.objects.create(
+            borrowing=borrowing,
+            type=Payment.Type.FINE,
+            status=Payment.Status.PAID,
+            money_to_pay=Decimal("30.00"),
+            session_url="https://stripe.com/session/fine_paid",
+            session_id="session_fine_paid"
+        )
+
+        self.client.force_authenticate(self.user)
+        response = self.client.post(self.get_renew_payment_url(borrowing.id))
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("message", response.data)
+        self.assertEqual(response.data["message"], "Nothing to pay")
+
+    @patch("base.borrowing_service.borrowing_service.renew_payment_for_borrowing")
+    @patch("base.fine_service.fine_service.create_fine_payment_if_overdue")
+    def test_renew_payment_creates_both_payment_and_fine(self, mock_fine_service, mock_borrowing_service):
+        borrowing = Borrowing.objects.create(
+            user=self.user,
+            book=self.book,
+            expected_return_date=date.today() - timedelta(days=3),
+            actual_return_date=date.today()
+        )
+
+        mock_payment = Mock()
+        mock_payment.id = 456
+        mock_borrowing_service.return_value = mock_payment
+
+        mock_fine_payment = Mock()
+        mock_fine_payment.id = 789
+        mock_fine_service.return_value = mock_fine_payment
+
+        self.client.force_authenticate(self.user)
+        response = self.client.post(self.get_renew_payment_url(borrowing.id))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        mock_borrowing_service.assert_called_once_with(borrowing)
+        mock_fine_service.assert_called_once_with(borrowing)
+        
+        self.assertEqual(len(response.data), 2)
+
+        payment_response = next(item for item in response.data if "payment" in item)
+        self.assertEqual(payment_response["payment"], "New payment created with id 456")
+
+        fine_response = next(item for item in response.data if "fine" in item)
+        self.assertEqual(fine_response["fine"], "New fine created with id 789")
+
+    def test_renew_payment_ignores_fine_logic_for_non_returned_book(self):
+        borrowing = Borrowing.objects.create(
+            user=self.user,
+            book=self.book,
+            expected_return_date=date.today() + timedelta(days=7),
+        )
+
+        self.client.force_authenticate(self.user)
+        
+        with patch("base.borrowing_service.borrowing_service.renew_payment_for_borrowing") as mock_borrowing_service:
+            mock_payment = Mock()
+            mock_payment.id = 456
+            mock_borrowing_service.return_value = mock_payment
+
+            response = self.client.post(self.get_renew_payment_url(borrowing.id))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertIn("payment", response.data[0])
+        self.assertEqual(response.data[0]["payment"], "New payment created with id 456")
+
+    def test_renew_payment_permission_denied_for_other_user(self):
+        other_user = User.objects.create_user(
+            email="other@test.com",
+            password="password"
+        )
+        
+        borrowing = Borrowing.objects.create(
+            user=other_user,
+            book=self.book,
+            expected_return_date=date.today() + timedelta(days=7)
+        )
+
+        self.client.force_authenticate(self.user)
+        response = self.client.post(self.get_renew_payment_url(borrowing.id))
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_renew_payment_admin_can_access_any_borrowing(self):
+        borrowing = Borrowing.objects.create(
+            user=self.user,
+            book=self.book,
+            expected_return_date=date.today() + timedelta(days=7)
+        )
+
+        self.client.force_authenticate(self.admin)
+        
+        with patch("base.borrowing_service.borrowing_service.renew_payment_for_borrowing") as mock_borrowing_service:
+            mock_payment = Mock()
+            mock_payment.id = 456
+            mock_borrowing_service.return_value = mock_payment
+
+            response = self.client.post(self.get_renew_payment_url(borrowing.id))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(len(response.data), 1)
+        self.assertIn("payment", response.data[0])
+        self.assertEqual(response.data[0]["payment"], "New payment created with id 456")
+
+    def test_renew_payment_unauthenticated_user(self):
+        borrowing = Borrowing.objects.create(
+            user=self.user,
+            book=self.book,
+            expected_return_date=date.today() + timedelta(days=7)
+        )
+
+        response = self.client.post(self.get_renew_payment_url(borrowing.id))
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
