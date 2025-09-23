@@ -22,7 +22,7 @@ class PaymentProcessor:
             payment.save()
             return {"message": "Payment successful!"}
 
-        return {"message": "Payment not successful!"}
+        return {"error": "Payment not successful!"}
 
     @staticmethod
     def mark_cancelled(session_id: str) -> dict:
