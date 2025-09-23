@@ -9,6 +9,7 @@ from rest_framework.test import APITestCase
 from books.models import Book
 from borrowings.models import Borrowing
 from borrowings.serializers import BorrowingCreateSerializer
+from payments.models import Payment
 
 User = get_user_model()
 
@@ -223,3 +224,138 @@ class BorrowingAPITest(APITestCase):
         response = self.client.post(reverse("borrowings:borrowings-return-book", args=[borrowing.id]))
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertIn("already returned", response.data["detail"])
+
+    def test_create_borrowing_with_pending_payment(self):
+        self.client.force_authenticate(self.user)
+        existing_borrowing = Borrowing.objects.create(
+            user=self.user,
+            book=self.book,
+            expected_return_date=date.today() + timedelta(days=7),
+        )
+        Payment.objects.create(
+            borrowing=existing_borrowing,
+            session_url="http://example.com",
+            session_id="test_session_id",
+            money_to_pay=Decimal("10.00"),
+            status=Payment.Status.PENDING,
+        )
+
+        new_book = Book.objects.create(
+            title="New Book API",
+            inventory=3,
+            daily_fee=Decimal("3.00"),
+        )
+        data = {
+            "book": new_book.id,
+            "expected_return_date": date.today() + timedelta(days=7),
+        }
+        response = self.client.post(self.list_url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("You cannot borrow new books while you have pending payments.",
+                      str(response.data))
+        new_book.refresh_from_db()
+        self.assertEqual(new_book.inventory, 3)
+
+    def test_create_borrowing_api_with_paid_payment(self):
+        self.client.force_authenticate(self.user)
+
+        existing_borrowing = Borrowing.objects.create(
+            user=self.user,
+            book=self.book,
+            expected_return_date=date.today() + timedelta(days=7),
+        )
+        Payment.objects.create(
+            borrowing=existing_borrowing,
+            session_url="http://example.com",
+            session_id="test_session_id",
+            money_to_pay=Decimal("10.00"),
+            status=Payment.Status.PAID,
+        )
+
+        new_book = Book.objects.create(
+            title="New Book API",
+            inventory=3,
+            daily_fee=Decimal("3.00"),
+        )
+        data = {
+            "book": new_book.id,
+            "expected_return_date": date.today() + timedelta(days=7),
+        }
+        response = self.client.post(self.list_url, data)
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+        new_book.refresh_from_db()
+        self.assertEqual(new_book.inventory, 2)
+
+    def test_borrowing_create_serializer_multiple_pending_payments(self):
+        test_user = User.objects.create_user(
+            email="test_multiple@test.com",
+            password="p",
+        )
+
+        for i in range(3):
+            book = Book.objects.create(
+                title=f"Book {i}",
+                inventory=5,
+                daily_fee=Decimal("1.00"),
+            )
+            borrowing = Borrowing.objects.create(
+                user=test_user,
+                book=book,
+                expected_return_date=date.today() + timedelta(days=7),
+            )
+            Payment.objects.create(
+                borrowing=borrowing,
+                session_url=f"http://example{i}.com",
+                session_id=f"test_session_id_{i}",
+                money_to_pay=Decimal(f"{i + 1}.00"),
+                status=Payment.Status.PENDING,
+            )
+
+        new_book = Book.objects.create(
+            title="New Book",
+            inventory=5,
+            daily_fee=Decimal("2.00"),
+        )
+        data = {
+            "book": new_book.id,
+            "expected_return_date": date.today() + timedelta(days=5),
+        }
+
+        serializer = BorrowingCreateSerializer(
+            data=data,
+            context={"request": self.client},
+        )
+        serializer.context["request"].user = test_user
+
+        self.assertFalse(serializer.is_valid())
+        self.assertIn("You cannot borrow new books while you have pending payments.",
+                      str(serializer.errors))
+
+    def test_borrowing_create_serializer_no_payments(self):
+        clean_user = User.objects.create_user(
+            email="clean_user@test.com",
+            password="p",
+        )
+
+        new_book = Book.objects.create(
+            title="New Book",
+            inventory=5,
+            daily_fee=Decimal("2.00"),
+        )
+        data = {
+            "book": new_book.id,
+            "expected_return_date": date.today() + timedelta(days=5),
+        }
+
+        serializer = BorrowingCreateSerializer(
+            data=data,
+            context={"request": self.client},
+        )
+        serializer.context["request"].user = clean_user
+
+        self.assertTrue(serializer.is_valid())
+        borrowing = serializer.save()
+        self.assertEqual(borrowing.user, clean_user)
