@@ -3,17 +3,18 @@ from django.db.models import F
 from django.shortcuts import get_object_or_404
 from django.utils import timezone
 
+from base import exceptions
+from base.dto import PaymentData, PaymentSessionData
 from base.payment_services import payment_service
 from books.models import Book
 from borrowings.models import Borrowing
 from payments.models import Payment
-from base.dto import PaymentData, PaymentSessionData
-from base import exceptions
+
 
 class PaymentProcessor:
     @staticmethod
-    def mark_success(session_id: str) -> dict:
-        payment = get_object_or_404(Payment, session_id=session_id)
+    def mark_success(session_id: str, user) -> dict:
+        payment = get_object_or_404(Payment, session_id=session_id, borrowing__user=user)
 
         if payment.status != Payment.Status.PENDING:
             return {"error": f"This payment was already {payment.status.lower()}."}
@@ -26,11 +27,11 @@ class PaymentProcessor:
         return {"error": "Payment not successful!"}
 
     @staticmethod
-    def mark_cancelled(session_id: str) -> dict:
-        payment = get_object_or_404(Payment, session_id=session_id)
-
-        if payment.status != Payment.Status.PENDING:
-            return {"error": f"This payment was already {payment.status.lower()}."}
+    def mark_canceled(session_id: str, user) -> dict:
+        result = PaymentProcessor.check_if_session_valid(session_id)
+        if "error" in result:
+            return result
+        payment = result.get("payment")
 
         with transaction.atomic():
             payment.status = Payment.Status.CANCELLED
@@ -49,13 +50,13 @@ class PaymentProcessor:
         return {"message": "Payment was cancelled."}
 
     @staticmethod
-    def check_if_session_valid(session_id: str) -> dict:
-        payment = get_object_or_404(Payment, session_id=session_id)
+    def check_if_session_valid(session_id: str, user) -> dict:
+        payment = get_object_or_404(Payment, session_id=session_id, borrowing__user=user)
 
         if payment.status != Payment.Status.PENDING:
             return {"error": f"This payment was already {payment.status.lower()}."}
 
-        return {"message": "Session valid"}
+        return {"payment": payment}
 
     @staticmethod
     def create_payment_by_borrowing(borrowing: Borrowing, payment_data: PaymentData):
