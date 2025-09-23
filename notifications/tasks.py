@@ -20,3 +20,8 @@ def send_overdue_borrowings_messages():
             notification.send(f"Book: {borrowing.book.title} borrowed {borrowing.borrow_date} is overdue")
     else:
         notification.send("No borrowings overdue today!")
+
+@shared_task
+def send_new_borrowing_notification(message: str):
+    notification = notifications.services.notification
+    notification.send(message)
