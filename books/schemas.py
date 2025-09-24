@@ -3,6 +3,7 @@ from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema
 
 book_viewset_schema = extend_schema_view(
     list=extend_schema(
+        tags=["Books"],
         description="Retrieve a list of all available books in the library.",
         parameters=[
             OpenApiParameter(
@@ -39,21 +40,26 @@ book_viewset_schema = extend_schema_view(
         ],
     ),
     create=extend_schema(
+        tags=["Books"],
         description="Add a new book to the library catalog. "
                     "Only admin users can create books.",
     ),
     retrieve=extend_schema(
+        tags=["Books"],
         description="Retrieve detailed information about a specific book by its ID.",
     ),
     update=extend_schema(
+        tags=["Books"],
         description="Update all fields of a specific book. "
                     "Only admin users can update books.",
     ),
     partial_update=extend_schema(
+        tags=["Books"],
         description="Update specific fields of a book. "
                     "Only admin users can update books.",
     ),
     destroy=extend_schema(
+        tags=["Books"],
         description="Remove a book from the library catalog. "
                     "Only admin users can delete books.",
     ),

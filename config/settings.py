@@ -180,21 +180,21 @@ SPECTACULAR_SETTINGS = {
     "SECURITY": [{"CustomAuth": []}],
     "TAGS": [
         {
-            "name": "library",
+            "name": "Books",
             "description": "Book catalog and inventory management"
         },
         {
-            "name": "borrowings",
+            "name": "Borrowings",
             "description": "Borrowing and return operations"
         },
         {
-            "name": "payments",
+            "name": "Payments",
             "description": "Payment processing and billing"
         },
         {
-            "name": "users",
+            "name": "Users",
             "description": "User management and profiles"
-        }
+        },
     ],
 }
 
