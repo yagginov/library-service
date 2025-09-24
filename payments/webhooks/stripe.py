@@ -31,6 +31,12 @@ def stripe_webhook(request):
     except stripe.error.SignatureVerificationError:
         return json.jsonify(success=False)
 
+    if event.type == "checkout.session.completed":
+        session = event.data.object
+        payment = get_object_or_404(Payment, session_id=session.id)
+        payment.status = Payment.Status.PAID
+        payment.save()
+
     if event.type == "checkout.session.expired":
         session = event.data.object
         payment = get_object_or_404(Payment, session_id=session.id)
