@@ -12,17 +12,22 @@ from borrowings.models import Borrowing
 from payments.models import Payment
 
 User = get_user_model()
-patcher = None
+patcher_borrowing_delay = None
+patcher_payment_delay = None
 
 
 def setUpModule():
-    global patcher
-    patcher = patch("borrowings.signals.send_new_borrowing_notification.delay")
-    patcher.start()
+    global patcher_borrowing_delay
+    patcher_borrowing_delay = patch("borrowings.signals.send_new_borrowing_notification.delay")
+    patcher_borrowing_delay.start()
+    global patcher_payment_delay
+    patcher_payment_delay = patch("payments.signals.send_success_payment_notification.delay")
+    patcher_payment_delay.start()
 
 
 def tearDownModule():
-    patcher.stop()
+    patcher_borrowing_delay.stop()
+    patcher_payment_delay.stop()
 
 
 class TestPaymentViewSet(APITestCase):
