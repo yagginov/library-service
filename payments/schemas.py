@@ -1,4 +1,4 @@
-from drf_spectacular.utils import extend_schema, extend_schema_view, OpenApiParameter
+from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema_view
 
 payment_viewset_schema = extend_schema_view(
     list=extend_schema(

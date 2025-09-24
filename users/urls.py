@@ -1,6 +1,6 @@
 from django.urls import path
 
-from users.jwt_views import CustomTokenRefreshView, CustomTokenObtainPairView
+from users.jwt_views import CustomTokenObtainPairView, CustomTokenRefreshView
 from users.views import ChangeUserPasswordView, UserProfileView, UserRegistrationView
 
 urlpatterns = [

@@ -1,7 +1,7 @@
 from rest_framework import generics
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from users.schemas import user_profile_schema, user_registration_schema, user_change_password_schema
+from users.schemas import user_change_password_schema, user_profile_schema, user_registration_schema
 from users.serializers import ChangeUserPassword, UserProfileSerializer, UserRegistrationSerializer
 
 
