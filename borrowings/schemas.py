@@ -3,6 +3,7 @@ from drf_spectacular.utils import OpenApiParameter, extend_schema, extend_schema
 
 borrowings_viewset_schema = extend_schema_view(
     list=extend_schema(
+        tags=["Borrowings"],
         description="Retrieve list of borrowings. Regular users see only their own borrowings, "
                     "while admin users can see all borrowings.",
         parameters=[
@@ -14,17 +15,25 @@ borrowings_viewset_schema = extend_schema_view(
         ],
     ),
     create=extend_schema(
+        tags=["Borrowings"],
         description="Borrow a book from the library. "
                     "The book inventory will be automatically decreased by 1.",
     ),
     retrieve=extend_schema(
+        tags=["Borrowings"],
         description="Retrieve detailed information about a specific borrowing. "
                    "Regular users can only access their own borrowings, "
                    "while admin users can access any borrowing.",
     ),
     return_book=extend_schema(
+        tags=["Borrowings"],
         description="Mark a borrowing as returned and set the actual return date to today. "
                    "The book inventory will be automatically increased by 1. "
                    "Only the user who borrowed the book (or admin) can return it.",
+    ),
+    renew_payment=extend_schema(
+        tags=["Borrowings"],
+        description="Create new payment or fine for a borrowing. "
+                    "Creates payment if not exists and fine if book is overdue and returned.",
     ),
 )
