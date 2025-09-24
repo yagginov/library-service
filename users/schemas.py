@@ -1,9 +1,6 @@
 from drf_spectacular.utils import extend_schema, extend_schema_view
 
-from users.serializers import (
-    UserRegistrationSerializer,
-    ChangeUserPassword
-)
+from users.serializers import ChangeUserPassword, UserRegistrationSerializer
 
 user_registration_schema = extend_schema(
     tags=["Users"],
