@@ -1,12 +1,12 @@
 from django.urls import include, path
-from rest_framework.routers import DefaultRouter
+from rest_framework import routers
 
 from borrowings.views import BorrowingViewSet
 
 app_name = "borrowings"
 
-router = DefaultRouter()
-router.register("", BorrowingViewSet, basename="borrowings")
+router = routers.DefaultRouter()
+router.register("borrowings", BorrowingViewSet, basename="borrowings")
 
 urlpatterns = [
     path("", include(router.urls)),
