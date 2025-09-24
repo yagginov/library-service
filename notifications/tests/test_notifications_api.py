@@ -1,24 +1,27 @@
 from datetime import date, timedelta
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
+
 from django.contrib.auth import get_user_model
-from django.urls import reverse
-from rest_framework import status
 from rest_framework.test import APITestCase
+
+from books.models import Book
 from borrowings.models import Borrowing
+from notifications.services import NotificationTelegramService
 from notifications.tasks import (
-    send_overdue_borrowings_messages,
     send_new_borrowing_notification,
+    send_overdue_borrowings_messages,
     send_success_payment_notification,
 )
-from notifications.services import NotificationTelegramService
-from telegram import Bot
 
 User = get_user_model()
+
 
 class TestNotificationService(APITestCase):
     @classmethod
     def setUpTestData(cls):
-        cls.admin = User.objects.create_user(email="admin@books.com", password="p", is_staff=True)
+        cls.admin = User.objects.create_user(
+            email="admin@books.com", password="p", is_staff=True
+        )
         cls.user = User.objects.create_user(email="user@books.com", password="p")
         cls.book = Book.objects.create(
             title="Test Book",
@@ -43,7 +46,9 @@ class TestNotificationService(APITestCase):
             expected_return_date=date.today() - timedelta(days=5),
         )
         send_overdue_borrowings_messages()
-        mock_send.assert_called_once_with(f"Book: {borrowing.book.title} borrowed {borrowing.borrow_date} is overdue")
+        mock_send.assert_called_once_with(
+            f"Book: {borrowing.book.title} borrowed {borrowing.borrow_date} is overdue"
+        )
 
     @patch("notifications.services.NotificationTelegramService.send")
     def test_send_new_borrowing_notification(self, mock_send):
@@ -54,6 +59,7 @@ class TestNotificationService(APITestCase):
     def test_send_success_payment_notification(self, mock_send):
         send_success_payment_notification("Payment successful!")
         mock_send.assert_called_once_with("Payment successful!")
+
 
 class TestNotificationTasks(APITestCase):
     @classmethod
@@ -76,7 +82,9 @@ class TestNotificationTasks(APITestCase):
             expected_return_date=date.today() - timedelta(days=5),
         )
         send_overdue_borrowings_messages()
-        mock_send.assert_called_once_with(f"Book: {borrowing.book.title} borrowed {borrowing.borrow_date} is overdue")
+        mock_send.assert_called_once_with(
+            f"Book: {borrowing.book.title} borrowed {borrowing.borrow_date} is overdue"
+        )
 
     @patch("notifications.tasks.notification.send")
     def test_send_overdue_borrowings_messages_without_overdue(self, mock_send):
@@ -100,7 +108,7 @@ class TestNotificationTasks(APITestCase):
         mock_send.assert_called_once_with("New borrowing created!")
 
     @patch("notifications.tasks.notification.send")
-    def test_send_multiple_overdue_borrowings(self, mock_send):
+    def test_send_multiple_overdue_borrowings_task(self, mock_send):
         Borrowing.objects.create(
             book=self.book,
             user=self.user,
@@ -141,7 +149,9 @@ class TestNotificationTasks(APITestCase):
             borrow_date=date.today() - timedelta(days=10),
             expected_return_date=date.today() - timedelta(days=5),
         )
-        admin_user = User.objects.create_user(email="admin@books.com", password="p", is_staff=True)
+        admin_user = User.objects.create_user(
+            email="admin@books.com", password="p", is_staff=True
+        )
         Borrowing.objects.create(
             book=self.book,
             user=admin_user,
@@ -184,8 +194,8 @@ class TestNotificationTasks(APITestCase):
         self.assertEqual(mock_send.call_count, 10)
 
     @patch("notifications.services.NotificationTelegramService.send")
-    def test_send_multiple_overdue_borrowings(self, mock_send):
-        for i in range(5):
+    def test_send_multiple_overdue_borrowings_service(self, mock_send):
+        for _ in range(5):
             Borrowing.objects.create(
                 book=self.book,
                 user=self.user,
@@ -197,7 +207,9 @@ class TestNotificationTasks(APITestCase):
 
     @patch("notifications.services.NotificationTelegramService.send")
     def test_send_notification_for_admin(self, mock_send):
-        admin = User.objects.create_user(email="admin@books.com", password="p", is_staff=True)
+        admin = User.objects.create_user(
+            email="admin@books.com", password="p", is_staff=True
+        )
         Borrowing.objects.create(
             book=self.book,
             user=admin,
@@ -205,4 +217,6 @@ class TestNotificationTasks(APITestCase):
             expected_return_date=date.today() - timedelta(days=5),
         )
         send_overdue_borrowings_messages()
-        mock_send.assert_called_once_with(f"Book: {self.book.title} borrowed {date.today() - timedelta(days=10)} is overdue")
+        mock_send.assert_called_once_with(
+            f"Book: {self.book.title} borrowed {date.today() - timedelta(days=10)} is overdue"
+        )
