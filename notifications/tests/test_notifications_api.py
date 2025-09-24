@@ -73,7 +73,7 @@ class TestNotificationTasks(APITestCase):
             daily_fee=1.5,
         )
 
-    @patch("notifications.tasks.notification.send")
+    @patch("notifications.services.notification.send")
     def test_send_overdue_borrowings_messages_with_overdue(self, mock_send):
         borrowing = Borrowing.objects.create(
             book=self.book,
@@ -86,7 +86,7 @@ class TestNotificationTasks(APITestCase):
             f"Book: {borrowing.book.title} borrowed {borrowing.borrow_date} is overdue"
         )
 
-    @patch("notifications.tasks.notification.send")
+    @patch("notifications.services.notification.send")
     def test_send_overdue_borrowings_messages_without_overdue(self, mock_send):
         Borrowing.objects.create(
             book=self.book,
@@ -97,17 +97,17 @@ class TestNotificationTasks(APITestCase):
         send_overdue_borrowings_messages()
         mock_send.assert_called_once_with("No borrowings overdue today!")
 
-    @patch("notifications.tasks.notification.send")
+    @patch("notifications.services.notification.send")
     def test_send_success_payment_notification(self, mock_send):
         send_success_payment_notification("Payment successful!")
         mock_send.assert_called_once_with("Payment successful!")
 
-    @patch("notifications.tasks.notification.send")
+    @patch("notifications.services.notification.send")
     def test_send_new_borrowing_notification(self, mock_send):
         send_new_borrowing_notification("New borrowing created!")
         mock_send.assert_called_once_with("New borrowing created!")
 
-    @patch("notifications.tasks.notification.send")
+    @patch("notifications.services.notification.send")
     def test_send_multiple_overdue_borrowings_task(self, mock_send):
         Borrowing.objects.create(
             book=self.book,
@@ -124,19 +124,19 @@ class TestNotificationTasks(APITestCase):
         send_overdue_borrowings_messages()
         self.assertEqual(mock_send.call_count, 2)
 
-    @patch("notifications.tasks.notification.send")
+    @patch("notifications.services.notification.send")
     def test_send_new_borrowing_notification_with_dynamic_message(self, mock_send):
         message = f"New borrowing created for {self.book.title}"
         send_new_borrowing_notification(message)
         mock_send.assert_called_once_with(message)
 
-    @patch("notifications.tasks.notification.send")
+    @patch("notifications.services.notification.send")
     def test_send_success_payment_notification_with_dynamic_message(self, mock_send):
         message = "Payment successful for your borrowing."
         send_success_payment_notification(message)
         mock_send.assert_called_once_with(message)
 
-    @patch("notifications.tasks.notification.send")
+    @patch("notifications.services.notification.send")
     def test_no_overdue_borrowing_notifications(self, mock_send):
         send_overdue_borrowings_messages()
         mock_send.assert_called_once_with("No borrowings overdue today!")
@@ -187,7 +187,7 @@ class TestNotificationTasks(APITestCase):
         send_success_payment_notification("")
         mock_send.assert_called_once_with("")
 
-    @patch("notifications.tasks.notification.send")
+    @patch("notifications.services.notification.send")
     def test_send_multiple_notifications(self, mock_send):
         for _ in range(10):
             send_success_payment_notification("Payment successful!")
@@ -210,7 +210,7 @@ class TestNotificationTasks(APITestCase):
         admin = User.objects.create_user(
             email="admin@books.com", password="p", is_staff=True
         )
-        Borrowing.objects.create(
+        borrowing = Borrowing.objects.create(
             book=self.book,
             user=admin,
             borrow_date=date.today() - timedelta(days=10),
@@ -218,5 +218,5 @@ class TestNotificationTasks(APITestCase):
         )
         send_overdue_borrowings_messages()
         mock_send.assert_called_once_with(
-            f"Book: {self.book.title} borrowed {date.today() - timedelta(days=10)} is overdue"
+            f"Book: {borrowing.book.title} borrowed {borrowing.borrow_date} is overdue"
         )
