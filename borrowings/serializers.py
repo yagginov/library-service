@@ -117,6 +117,10 @@ class BorrowingDetailSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class BorrowingCleanSerializer(serializers.Serializer):
+    pass
+
+
 class RenewPaymentResponseSerializer(serializers.Serializer):
     payment = serializers.CharField(required=False)
     fine = serializers.CharField(required=False)

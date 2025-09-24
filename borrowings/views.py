@@ -10,7 +10,12 @@ from base.permissions import IsAdminOrOwnerWithCreatePermission
 from borrowings.filters import BorrowingFilter
 from borrowings.models import Borrowing
 from borrowings.schemas import borrowings_viewset_schema
-from borrowings.serializers import BorrowingCreateSerializer, BorrowingDetailSerializer, RenewPaymentResponseSerializer
+from borrowings.serializers import (
+    BorrowingCleanSerializer,
+    BorrowingCreateSerializer,
+    BorrowingDetailSerializer,
+    RenewPaymentResponseSerializer,
+)
 from payments.models import Payment
 
 
@@ -25,6 +30,7 @@ class BorrowingViewSet(
     filter_backends = [DjangoFilterBackend]
     filterset_class = BorrowingFilter
 
+    @extend_schema(request=BorrowingCleanSerializer)
     @action(detail=True, methods=["post"])
     def return_book(self, request, pk=None):
         borrowing = self.get_object()
@@ -53,7 +59,10 @@ class BorrowingViewSet(
             }
         return Response(response_data, status=status.HTTP_200_OK)
 
-    @extend_schema(responses={200: RenewPaymentResponseSerializer(many=True)})
+    @extend_schema(
+        request=BorrowingCleanSerializer,
+        responses={200: RenewPaymentResponseSerializer(many=True)},
+    )
     @action(detail=True, methods=["post"])
     def renew_payment(self, request, pk=None):
         borrowing = self.get_object()
@@ -109,4 +118,6 @@ class BorrowingViewSet(
     def get_serializer_class(self):
         if self.action == "retrieve":
             return BorrowingDetailSerializer
+        if self.action in ["renew_payment", "return_book"]:
+            return BorrowingCleanSerializer
         return BorrowingCreateSerializer
