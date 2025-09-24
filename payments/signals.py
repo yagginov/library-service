@@ -1,8 +1,8 @@
 from django.db.models.signals import post_save
 from django.dispatch import receiver
 
-from payments.models import Payment
 from notifications.tasks import send_success_payment_notification
+from payments.models import Payment
 
 
 @receiver(post_save, sender=Payment)
