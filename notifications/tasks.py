@@ -25,3 +25,8 @@ def send_overdue_borrowings_messages():
 def send_new_borrowing_notification(message: str):
     notification = notifications.services.notification
     notification.send(message)
+
+@shared_task
+def send_success_payment_notification(message: str):
+    notification = notifications.services.notification
+    notification.send(message)
