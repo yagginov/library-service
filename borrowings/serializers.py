@@ -91,3 +91,9 @@ class BorrowingDetailSerializer(serializers.ModelSerializer):
             "payments",
         ]
         read_only_fields = fields
+
+
+class RenewPaymentResponseSerializer(serializers.Serializer):
+    payment = serializers.CharField(required=False)
+    fine = serializers.CharField(required=False)
+    message = serializers.CharField(required=False)
