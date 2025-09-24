@@ -83,7 +83,6 @@ class ChangeUserPassword(serializers.Serializer):
         write_only=True,
         required=True,
     )
-    fields = ["old password" "new password1", "new password2"]
 
     def validate(self, attrs):
         user = self.context["request"].user

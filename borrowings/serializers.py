@@ -1,7 +1,5 @@
 from datetime import date
 
-from django.db import transaction
-from django.db.models import F
 from rest_framework import serializers
 
 from base import exceptions
@@ -34,15 +32,41 @@ class BorrowingCreateSerializer(serializers.ModelSerializer):
     def validate(self, attrs):
         user = self.context["request"].user
 
-        pending_payments = Payment.objects.filter(
-            borrowing__user=user,
-            status=Payment.Status.PENDING,
+        user_borrowings = Borrowing.objects.filter(
+            user=user
+        ).prefetch_related("payments")
+        
+        for borrowing in user_borrowings:
+            payments = borrowing.payments.all()
+            
+            payment_payments = payments.filter(type=Payment.Type.PAYMENT)
+            fine_payments = payments.filter(type=Payment.Type.FINE)
+            
+            if payment_payments.exists():
+                has_paid_payment = payment_payments.filter(status=Payment.Status.PAID).exists()
+                if not has_paid_payment:
+                    raise serializers.ValidationError(
+                        "You cannot borrow new books while you have pending payments."
+                    )
+            
+            if fine_payments.exists():
+                has_paid_fine = fine_payments.filter(status=Payment.Status.PAID).exists()
+                if not has_paid_fine:
+                    raise serializers.ValidationError(
+                        "You cannot borrow new books while you have pending payments."
+                    )
+
+        active_borrowing = Borrowing.objects.filter(
+            user=user,
+            book=attrs["book"],
+            actual_return_date__isnull=True
         ).exists()
 
-        if pending_payments:
+        if active_borrowing:
             raise serializers.ValidationError(
-                "You cannot borrow new books while you have pending payments."
+                "You already have an active borrowing for this book."
             )
+
         return attrs
 
     def validate_book(self, value):
@@ -91,3 +115,13 @@ class BorrowingDetailSerializer(serializers.ModelSerializer):
             "payments",
         ]
         read_only_fields = fields
+
+
+class BorrowingCleanSerializer(serializers.Serializer):
+    pass
+
+
+class RenewPaymentResponseSerializer(serializers.Serializer):
+    payment = serializers.CharField(required=False)
+    fine = serializers.CharField(required=False)
+    message = serializers.CharField(required=False)

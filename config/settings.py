@@ -158,8 +158,8 @@ REST_FRAMEWORK = {
         "rest_framework.throttling.UserRateThrottle",
     ],
     "DEFAULT_THROTTLE_RATES": {
-        "anon": "100/day",
-        "user": "1000/day",
+        "anon": "100/minute",
+        "user": "1000/minute",
     },
 }
 
@@ -180,21 +180,21 @@ SPECTACULAR_SETTINGS = {
     "SECURITY": [{"CustomAuth": []}],
     "TAGS": [
         {
-            "name": "library",
+            "name": "Books",
             "description": "Book catalog and inventory management"
         },
         {
-            "name": "borrowings",
+            "name": "Borrowings",
             "description": "Borrowing and return operations"
         },
         {
-            "name": "payments",
+            "name": "Payments",
             "description": "Payment processing and billing"
         },
         {
-            "name": "users",
+            "name": "Users",
             "description": "User management and profiles"
-        }
+        },
     ],
 }
 
@@ -220,3 +220,4 @@ STRIPE_PUBLISHABLE_KEY = os.environ["STRIPE_PUBLISHABLE_KEY"]
 STRIPE_SECRET_KEY = os.environ["STRIPE_SECRET_KEY"]
 
 FINE_MULTIPLIER = Decimal("2.0")
+STRIPE_WEBHOOK_SECRET = os.getenv("STRIPE_WEBHOOK_SECRET", "")
