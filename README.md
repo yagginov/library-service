@@ -195,7 +195,7 @@ docker-compose down
 ### Service URLs
 - **API Server**: http://localhost:8000
 - **Admin Panel**: http://localhost:8000/admin/
-- **API Documentation**: http://localhost:8000/api/schema/swagger-ui/
+- **API Documentation**: http://localhost:8000/api/doc/swagger/
 - **Flower (Celery Monitor)**: http://localhost:5555
 - **PostgreSQL**: localhost:5432
 - **Redis**: localhost:6379
@@ -204,36 +204,36 @@ docker-compose down
 
 ### Authentication
 ```
-POST /api/auth/register/     # User registration
-POST /api/auth/login/        # User login (get JWT tokens)
-POST /api/auth/refresh/      # Refresh JWT token
-GET  /api/auth/profile/      # Get user profile
-PUT  /api/auth/profile/      # Update user profile
+POST /api/users/                        # User registration
+POST /api/users/token/                  # User login (get JWT tokens)
+POST /api/users/token/refresh/          # Refresh JWT token
+GET  /api/users/me/                     # Get user profile
+PUT  /api/users/me/change-password      # Update user profile
 ```
 
 ### Books
 ```
-GET    /api/books/           # List all books
-POST   /api/books/           # Create book (admin only)
-GET    /api/books/{id}/      # Get book details
-PUT    /api/books/{id}/      # Update book (admin only)
-DELETE /api/books/{id}/      # Delete book (admin only)
+GET    /api/library/books/           # List all books
+POST   /api/library/books/           # Create book (admin only)
+GET    /api/library/books/{id}/      # Get book details
+PUT    /api/library/books/{id}/      # Update book (admin only)
+DELETE /api/library/books/{id}/      # Delete book (admin only)
 ```
 
 ### Borrowings
 ```
-GET    /api/borrowings/             # List user's borrowings
-POST   /api/borrowings/             # Create new borrowing
-GET    /api/borrowings/{id}/        # Get borrowing details
-POST   /api/borrowings/{id}/return/ # Return borrowed book
+GET    /api/library/borrowings/                  # List user's borrowings
+POST   /api/library/borrowings/                  # Create new borrowing
+GET    /api/library/borrowings/{id}/             # Get borrowing details
+POST   /api/library/borrowings/{id}/return-book/ # Return borrowed book
 ```
 
 ### Payments
 ```
-GET    /api/payments/               # List user's payments
-GET    /api/payments/{id}/          # Get payment details
-POST   /api/payments/{id}/success/  # Handle payment success
-POST   /api/payments/{id}/cancel/   # Handle payment cancellation
+GET    /api/library/payments/               # List user's payments
+GET    /api/library/payments/{id}/          # Get payment details
+POST   /api/library/payments/{id}/success/  # Handle payment success
+POST   /api/library/payments/{id}/cancel/   # Handle payment cancellation
 ```
 
 ## Business Logic
@@ -328,7 +328,7 @@ coverage html
 
 For support and questions:
 - Open an issue in the GitHub repository
-- Check the API documentation at `/api/schema/swagger-ui/`
+- Check the API documentation at `/api/doc/swagger/`
 - Review the admin panel for data management
 
 ---
